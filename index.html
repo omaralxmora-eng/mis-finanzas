@@ -176,7 +176,7 @@
         </main>
     </div>
 
-    <!-- Modals (Cards, Template, Transaction) -->
+    <!-- Modals -->
     <div id="cardsModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
             <div class="p-4 bg-orange-600 text-white font-bold flex justify-between text-xs uppercase tracking-widest">
@@ -291,7 +291,9 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         const appIdGlobal = 'f-v1';
-        const apiKeyGemini = ""; 
+        
+        // API KEY ACTUALIZADA POR EL USUARIO
+        const apiKeyGemini = "AIzaSyCpJzDDi49GvmygfGvDwFBxRaPYnFynpP4_"; 
 
         let user = null;
         const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -342,12 +344,12 @@
         const getDocRef = (name, id) => doc(db, 'artifacts', appIdGlobal, 'users', user.uid, name, id);
 
         function initApp() {
-            onSnapshot(getCollRef('template'), snap => { state.template = snap.docs.map(d => ({id: d.id, ...d.data()})); renderTemplateList(); }, (e) => console.log(e));
-            onSnapshot(getCollRef('monthly'), snap => { state.monthly = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); }, (e) => console.log(e));
-            onSnapshot(getCollRef('extras'), snap => { state.extras = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); }, (e) => console.log(e));
-            onSnapshot(getCollRef('cards'), snap => { state.cards = snap.docs.map(d => ({id: d.id, ...d.data()})); renderCardSelector(); }, (e) => console.log(e));
-            onSnapshot(getCollRef('cardPurchases'), snap => { state.cardPurchases = snap.docs.map(d => ({id: d.id, ...d.data()})); renderCardDetail(); refreshUI(); }, (e) => console.log(e));
-            onSnapshot(getCollRef('cardPayments'), snap => { state.cardPayments = snap.docs.map(d => ({id: d.id, ...d.data()})); renderCardDetail(); refreshUI(); }, (e) => console.log(e));
+            onSnapshot(getCollRef('template'), snap => { state.template = snap.docs.map(d => ({id: d.id, ...d.data()})); renderTemplateList(); });
+            onSnapshot(getCollRef('monthly'), snap => { state.monthly = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
+            onSnapshot(getCollRef('extras'), snap => { state.extras = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
+            onSnapshot(getCollRef('cards'), snap => { state.cards = snap.docs.map(d => ({id: d.id, ...d.data()})); renderCardSelector(); });
+            onSnapshot(getCollRef('cardPurchases'), snap => { state.cardPurchases = snap.docs.map(d => ({id: d.id, ...d.data()})); renderCardDetail(); refreshUI(); });
+            onSnapshot(getCollRef('cardPayments'), snap => { state.cardPayments = snap.docs.map(d => ({id: d.id, ...d.data()})); renderCardDetail(); refreshUI(); });
 
             document.getElementById('btnAskAI').onclick = () => askGemini();
             document.getElementById('aiChatForm').onsubmit = (e) => { e.preventDefault(); askGemini(true); };
@@ -366,6 +368,11 @@
             const statusText = document.getElementById('aiStatusText');
             const chatInput = document.getElementById('aiChatInput');
 
+            if (!apiKeyGemini) {
+                content.innerText = "Error: Configura la API Key de Gemini en el código.";
+                return;
+            }
+
             const query = isChat ? chatInput.value : '';
             if (isChat && !query.trim()) return;
 
@@ -374,7 +381,6 @@
             statusText.innerText = "Consultando IA...";
             content.innerText = isChat ? "Pensando respuesta..." : "Analizando tus finanzas del mes...";
 
-            // OBTENER SOLO DATOS ACTIVOS (FILTRADO ESTRICTO)
             const listadoGastosFijos = state.monthly
                 .filter(m => m.active !== false && m.month === currentMonth && m.year === currentYear)
                 .map(m => `- ${m.name}: $${m.amount} [${m.status === 'paid' ? 'Pagado' : 'Pendiente'}]`)
@@ -395,28 +401,18 @@
                 })
                 .join("\n");
 
-            const contextText = `
-RESUMEN FINANCIERO (${currentMonth} ${currentYear}):
-- Ingresos: $${financials.ingresos}
-- Gastos Totales (Activos): $${financials.totalGastos}
-- Ya Pagado: $${financials.pagado}
-- Pendiente: $${financials.pendiente}
-
-DETALLE DE MOVIMIENTOS ACTIVOS:
-${listadoGastosFijos || '(Sin gastos fijos)'}
-${listadoVariables || '(Sin gastos variables)'}
-${listadoCuotas || '(Sin pagos de tarjeta)'}
-
-REGLA CRÍTICA: Ignora cualquier dato que no esté en esta lista anterior. Estos son los únicos datos vigentes para el usuario.
-`.trim();
+            const contextText = `RESUMEN (${currentMonth} ${currentYear}):\n- Ingresos: $${financials.ingresos}\n- Gastos: $${financials.totalGastos}\n- Pagado: $${financials.pagado}\n- Pendiente: $${financials.pendiente}\n\nDETALLE:\n${listadoGastosFijos}\n${listadoVariables}\n${listadoCuotas}`;
 
             const prompt = isChat 
-                ? `${contextText}\n\nPregunta del usuario: "${query}". Responde brevemente (máx 3 frases) y con mucha precisión financiera basándote únicamente en los datos proporcionados.`
-                : `${contextText}\n\nGenera un análisis en JSON: {"eficiencia": (0-100), "riesgo": "Bajo/Medio/Alto", "mensaje": "Resumen ejecutivo y 3 consejos accionables para optimizar este mes"}.`;
+                ? `${contextText}\n\nPregunta: "${query}". Responde en español de forma breve y clara.`
+                : `${contextText}\n\nGenera un análisis en JSON: {"eficiencia": (0-100), "riesgo": "Bajo/Medio/Alto", "mensaje": "Resumen corto y 3 consejos rápidos en español"}.`;
+
+            // USANDO EL MODELO ESTABLE 1.5 FLASH
+            const modelUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKeyGemini}`;
 
             const callGemini = async (retryCount = 0) => {
                 try {
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKeyGemini}`, {
+                    const res = await fetch(modelUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -424,16 +420,11 @@ REGLA CRÍTICA: Ignora cualquier dato que no esté en esta lista anterior. Estos
                             ...(isChat ? {} : { generationConfig: { responseMimeType: "application/json" } })
                         })
                     });
-                    if (!res.ok && retryCount < 5) {
-                        const delay = Math.pow(2, retryCount) * 1000;
-                        await new Promise(r => setTimeout(r, delay));
-                        return callGemini(retryCount + 1);
-                    }
+                    if (!res.ok) throw new Error(`Status ${res.status}`);
                     return await res.json();
                 } catch (e) {
-                    if (retryCount < 5) {
-                        const delay = Math.pow(2, retryCount) * 1000;
-                        await new Promise(r => setTimeout(r, delay));
+                    if (retryCount < 3) {
+                        await new Promise(r => setTimeout(r, 1500 * (retryCount + 1)));
                         return callGemini(retryCount + 1);
                     }
                     throw e;
@@ -455,11 +446,10 @@ REGLA CRÍTICA: Ignora cualquier dato que no esté en esta lista anterior. Estos
                     document.getElementById('aiRisk').innerText = result.riesgo;
                     document.getElementById('aiRisk').className = `text-sm font-black ${result.riesgo === 'Bajo' ? 'text-green-600' : (result.riesgo === 'Medio' ? 'text-orange-500' : 'text-red-600')}`;
                 }
-                
                 statusDot.className = "h-2 w-2 rounded-full bg-green-500";
                 statusText.innerText = "Análisis actualizado";
             } catch (err) {
-                content.innerText = "Error al procesar la solicitud.";
+                content.innerText = "Error: Verifica tu conexión o API Key.";
                 statusDot.className = "h-2 w-2 rounded-full bg-red-500";
                 statusText.innerText = "Error";
             } finally {
@@ -529,7 +519,7 @@ REGLA CRÍTICA: Ignora cualquier dato que no esté en esta lista anterior. Estos
                     const paymentId = `${p.id}_${currentMonth}_${currentYear}`;
                     const isPaid = state.cardPayments.some(pay => pay.id === paymentId);
                     const cardName = state.cards.find(c => c.id === p.cardId)?.name || 'Tarjeta';
-                    allExpenses.push({ id: p.id, name: `Pago ${cardName} - ${p.name}`, category: 'Créditos', amount, status: isPaid ? 'paid' : 'card', type: 'card', timestamp: p.timestamp || 0 });
+                    allExpenses.push({ id: p.id, name: `Pago ${cardName} - ${p.name}`, category: 'Créditos', amount, status: isPaid ? 'paid' : 'card', type: 'card' });
                     if (isPaid) { financials.pagado += amount; catTotals['Créditos'] = (catTotals['Créditos'] || 0) + amount; } 
                     else financials.pendiente += amount;
                     financials.totalGastos += amount;
