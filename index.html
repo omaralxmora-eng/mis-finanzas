@@ -272,7 +272,7 @@
         
         // API KEY DE GEMINI (Actualizada o corregida según sea necesario)
         const apiKeyGemini = "AIzaSyBeDvOhgUtcIxdCawH-A72iKZxLkje7XD8"; 
-        const GEMINI_MODEL = "gemini-1.5-flash";
+        const GEMINI_MODEL = "gemini-2.5-flash";
 
         let user = null;
         const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -362,7 +362,7 @@
                 : `${contextText}\n\nAnaliza estos datos y responde ESTRICTAMENTE en este formato JSON: {"eficiencia": 80, "riesgo": "Bajo", "mensaje": "Consejo breve aquí"}`;
             
             const modelUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKeyGemini}`;
-
+            
             const callWithRetry = async (retryCount = 0) => {
                 try {
                     const res = await fetch(modelUrl, { 
