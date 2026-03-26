@@ -1,369 +1,548 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2867
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;}
-{\colortbl;\red255\green255\blue255;\red70\green137\blue204;\red23\green24\blue24;\red140\green211\blue254;
-\red202\green202\blue202;\red109\green109\blue109;\red194\green126\blue101;\red183\green111\blue247;\red212\green212\blue212;
-\red113\green192\blue131;\red109\green115\blue120;\red54\green192\blue160;\red246\green124\blue48;\red238\green46\blue56;
-}
-{\*\expandedcolortbl;;\cssrgb\c33725\c61176\c83922;\cssrgb\c11765\c12157\c12549;\cssrgb\c61176\c86275\c99608;
-\cssrgb\c83137\c83137\c83137;\cssrgb\c50196\c50196\c50196;\cssrgb\c80784\c56863\c47059;\cssrgb\c77255\c54118\c97647;\cssrgb\c86275\c86275\c86275;
-\cssrgb\c50588\c78824\c58431;\cssrgb\c50196\c52549\c54510;\cssrgb\c23922\c78824\c69020;\cssrgb\c98039\c56471\c24314;\cssrgb\c95686\c27843\c27843;
-}
-\margl1440\margr1440\vieww11520\viewh8400\viewkind0
-\deftab720
-\pard\pardeftab720\partightenfactor0
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Financiero - Tarjetas de Crédito</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; color: #1e293b; }
+        .table-container { @apply bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden; }
+        .compact-row { @apply border-b border-slate-50 hover:bg-slate-50 transition-colors text-[13px]; }
+        .btn-action { @apply p-1 rounded hover:bg-slate-100 transition-colors; }
+        .status-badge { @apply px-2 py-0.5 rounded-full text-[10px] font-bold uppercase; }
+        #loadingOverlay { @apply fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center; }
+        .card-pill { @apply cursor-pointer px-3 py-1 rounded-full text-xs font-bold border transition-all; }
+        .card-pill.active { @apply bg-blue-600 border-blue-600 text-white shadow-md scale-105; }
+        .card-pill.inactive { @apply bg-white border-slate-200 text-slate-400 hover:border-blue-300; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="antialiased">
+    <div id="loadingOverlay">
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+        <p class="mt-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Cargando sesión...</p>
+    </div>
 
-\f0\fs28 \cf2 \cb3 \expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 <!DOCTYPE\cf4 \strokec4  html\cf2 \strokec2 >\cf5 \cb1 \strokec5 \
-\pard\pardeftab720\partightenfactor0
-\cf6 \cb3 \strokec6 <\cf2 \strokec2 html\cf5 \strokec5  \cf4 \strokec4 lang\cf6 \strokec6 =\cf7 \strokec7 "es"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cf6 \cb3 \strokec6 <\cf2 \strokec2 head\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\pard\pardeftab720\partightenfactor0
-\cf5 \cb3     \cf6 \strokec6 <\cf2 \strokec2 meta\cf5 \strokec5  \cf4 \strokec4 charset\cf6 \strokec6 =\cf7 \strokec7 "UTF-8"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3     \cf6 \strokec6 <\cf2 \strokec2 meta\cf5 \strokec5  \cf4 \strokec4 name\cf6 \strokec6 =\cf7 \strokec7 "viewport"\cf5 \strokec5  \cf4 \strokec4 content\cf6 \strokec6 =\cf7 \strokec7 "width=device-width, initial-scale=1.0"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3     \cf6 \strokec6 <\cf2 \strokec2 title\cf6 \strokec6 >\cf5 \strokec5 Mi Control Financiero - Cloud\cf6 \strokec6 </\cf2 \strokec2 title\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3     \cf6 \strokec6 <\cf2 \strokec2 script\cf5 \strokec5  \cf4 \strokec4 src\cf6 \strokec6 =\cf7 \strokec7 "https://cdn.tailwindcss.com"\cf6 \strokec6 ></\cf2 \strokec2 script\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3     \cf6 \strokec6 <\cf2 \strokec2 script\cf5 \strokec5  \cf4 \strokec4 src\cf6 \strokec6 =\cf7 \strokec7 "https://cdn.jsdelivr.net/npm/chart.js"\cf6 \strokec6 ></\cf2 \strokec2 script\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3     \cf6 \strokec6 <\cf2 \strokec2 style\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3         \cf8 \strokec8 @import\cf5 \strokec5  \cf7 \strokec7 url\cf9 \strokec9 (\cf10 \strokec10 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap'\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3         \cf2 \strokec2 body\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \strokec5  \cf4 \strokec4 font-family:\cf5 \strokec5  \cf10 \strokec10 'Inter'\cf9 \strokec9 ,\cf5 \strokec5  \cf7 \strokec7 sans-serif\cf9 \strokec9 ;\cf5 \strokec5  \cf4 \strokec4 background-color:\cf5 \strokec5  #f8fafc\cf9 \strokec9 ;\cf5 \strokec5  \cf9 \strokec9 \}\cf5 \cb1 \strokec5 \
-\cb3         \cf2 \strokec2 .card\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \strokec5  @apply bg-white p-6 rounded-2xl shadow-sm border border-slate-100; \cf9 \strokec9 \}\cf5 \cb1 \strokec5 \
-\cb3         \cf2 \strokec2 .btn-primary\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \strokec5  @apply bg-blue-600 \cf4 \strokec4 hover:\cf7 \strokec7 bg-blue-700\cf5 \strokec5  \cf7 \strokec7 text-white\cf5 \strokec5  \cf7 \strokec7 font-semibold\cf5 \strokec5  \cf7 \strokec7 py-2\cf5 \strokec5  \cf7 \strokec7 px-4\cf5 \strokec5  \cf7 \strokec7 rounded-lg\cf5 \strokec5  \cf7 \strokec7 transition-all\cf5 \strokec5  \cf7 \strokec7 disabled\cf5 \strokec5 :\cf7 \strokec7 opacity-50\cf9 \strokec9 ;\cf5 \strokec5  \cf9 \strokec9 \}\cf5 \cb1 \strokec5 \
-\cb3         \cf2 \strokec2 .input-field\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \strokec5  @apply mt-1 block w-full rounded-md border-slate-300 shadow-sm \cf4 \strokec4 focus:\cf7 \strokec7 border-blue-500\cf5 \strokec5  \cf7 \strokec7 focus\cf5 \strokec5 :\cf7 \strokec7 ring-blue-500\cf5 \strokec5  \cf7 \strokec7 sm\cf5 \strokec5 :\cf7 \strokec7 text-sm\cf5 \strokec5  \cf7 \strokec7 p-2\cf5 \strokec5  \cf7 \strokec7 border\cf9 \strokec9 ;\cf5 \strokec5  \cf9 \strokec9 \}\cf5 \cb1 \strokec5 \
-\cb3         \cf2 \strokec2 #loadingOverlay\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \strokec5  @apply fixed inset-0 bg-white bg-opacity-90 z-[100] flex flex-col items-center justify-center transition-opacity duration-300; \cf9 \strokec9 \}\cf5 \cb1 \strokec5 \
-\cb3     \cf6 \strokec6 </\cf2 \strokec2 style\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\pard\pardeftab720\partightenfactor0
-\cf6 \cb3 \strokec6 </\cf2 \strokec2 head\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cf6 \cb3 \strokec6 <\cf2 \strokec2 body\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "p-4 md:p-8"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\pard\pardeftab720\partightenfactor0
-\cf5 \cb3     \cf11 \strokec11 <!-- Pantalla de Carga -->\cf5 \cb1 \strokec5 \
-\cb3     \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "loadingOverlay"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3         \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"\cf6 \strokec6 ></\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3         \cf6 \strokec6 <\cf2 \strokec2 p\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-slate-600 font-medium"\cf6 \strokec6 >\cf5 \strokec5 Sincronizando con la nube...\cf6 \strokec6 </\cf2 \strokec2 p\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3     \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\
-\cb3     \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "max-w-7xl mx-auto"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3         \cf11 \strokec11 <!-- Header -->\cf5 \cb1 \strokec5 \
-\cb3         \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 <\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "flex items-center gap-3"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 h1\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-3xl font-bold text-slate-800"\cf6 \strokec6 >\cf5 \strokec5 Resumen de\cf6 \strokec6 </\cf2 \strokec2 h1\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 select\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "monthSelector"\cf5 \strokec5  \cf4 \strokec4 onchange\cf6 \strokec6 =\cf7 \strokec7 "handleMonthChange()"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-3xl font-bold text-blue-600 bg-transparent border-none focus:ring-0 cursor-pointer"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 option\cf5 \strokec5  \cf4 \strokec4 value\cf6 \strokec6 =\cf7 \strokec7 "Enero"\cf6 \strokec6 >\cf5 \strokec5 Enero\cf6 \strokec6 </\cf2 \strokec2 option\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 option\cf5 \strokec5  \cf4 \strokec4 value\cf6 \strokec6 =\cf7 \strokec7 "Febrero"\cf6 \strokec6 >\cf5 \strokec5 Febrero\cf6 \strokec6 </\cf2 \strokec2 option\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 option\cf5 \strokec5  \cf4 \strokec4 value\cf6 \strokec6 =\cf7 \strokec7 "Marzo"\cf6 \strokec6 >\cf5 \strokec5 Marzo\cf6 \strokec6 </\cf2 \strokec2 option\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 option\cf5 \strokec5  \cf4 \strokec4 value\cf6 \strokec6 =\cf7 \strokec7 "Abril"\cf6 \strokec6 >\cf5 \strokec5 Abril\cf6 \strokec6 </\cf2 \strokec2 option\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 option\cf5 \strokec5  \cf4 \strokec4 value\cf6 \strokec6 =\cf7 \strokec7 "Mayo"\cf6 \strokec6 >\cf5 \strokec5 Mayo\cf6 \strokec6 </\cf2 \strokec2 option\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 option\cf5 \strokec5  \cf4 \strokec4 value\cf6 \strokec6 =\cf7 \strokec7 "Junio"\cf6 \strokec6 >\cf5 \strokec5 Junio\cf6 \strokec6 </\cf2 \strokec2 option\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 option\cf5 \strokec5  \cf4 \strokec4 value\cf6 \strokec6 =\cf7 \strokec7 "Julio"\cf6 \strokec6 >\cf5 \strokec5 Julio\cf6 \strokec6 </\cf2 \strokec2 option\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 option\cf5 \strokec5  \cf4 \strokec4 value\cf6 \strokec6 =\cf7 \strokec7 "Agosto"\cf6 \strokec6 >\cf5 \strokec5 Agosto\cf6 \strokec6 </\cf2 \strokec2 option\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 option\cf5 \strokec5  \cf4 \strokec4 value\cf6 \strokec6 =\cf7 \strokec7 "Septiembre"\cf6 \strokec6 >\cf5 \strokec5 Septiembre\cf6 \strokec6 </\cf2 \strokec2 option\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 option\cf5 \strokec5  \cf4 \strokec4 value\cf6 \strokec6 =\cf7 \strokec7 "Octubre"\cf6 \strokec6 >\cf5 \strokec5 Octubre\cf6 \strokec6 </\cf2 \strokec2 option\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 option\cf5 \strokec5  \cf4 \strokec4 value\cf6 \strokec6 =\cf7 \strokec7 "Noviembre"\cf6 \strokec6 >\cf5 \strokec5 Noviembre\cf6 \strokec6 </\cf2 \strokec2 option\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 option\cf5 \strokec5  \cf4 \strokec4 value\cf6 \strokec6 =\cf7 \strokec7 "Diciembre"\cf6 \strokec6 >\cf5 \strokec5 Diciembre\cf6 \strokec6 </\cf2 \strokec2 option\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 </\cf2 \strokec2 select\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "flex items-center gap-2 mt-1"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 span\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse"\cf6 \strokec6 ></\cf2 \strokec2 span\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 p\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-xs text-slate-500 uppercase tracking-widest font-semibold"\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "userStatus"\cf6 \strokec6 >\cf5 \strokec5 Conectado\cf6 \strokec6 </\cf2 \strokec2 p\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "flex gap-2"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 button\cf5 \strokec5  \cf4 \strokec4 onclick\cf6 \strokec6 =\cf7 \strokec7 "openModal('transactionModal')"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "btn-primary flex items-center gap-2"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 span\cf6 \strokec6 >\cf5 \strokec5 + Nuevo Registro\cf6 \strokec6 </\cf2 \strokec2 span\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 </\cf2 \strokec2 button\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3         \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\
-\cb3         \cf11 \strokec11 <!-- KPI Cards -->\cf5 \cb1 \strokec5 \
-\cb3         \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "card border-l-4 border-l-green-500"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 p\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-sm font-medium text-slate-500 uppercase"\cf6 \strokec6 >\cf5 \strokec5 Ingresos Totales\cf6 \strokec6 </\cf2 \strokec2 p\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 h2\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "totalIncomes"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-2xl font-bold text-green-600"\cf6 \strokec6 >\cf5 \strokec5 $0.00\cf6 \strokec6 </\cf2 \strokec2 h2\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "card border-l-4 border-l-red-500"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 p\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-sm font-medium text-slate-500 uppercase"\cf6 \strokec6 >\cf5 \strokec5 Gastos Totales\cf6 \strokec6 </\cf2 \strokec2 p\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 h2\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "totalExpenses"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-2xl font-bold text-red-600"\cf6 \strokec6 >\cf5 \strokec5 $0.00\cf6 \strokec6 </\cf2 \strokec2 h2\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "card border-l-4 border-l-blue-500"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 p\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-sm font-medium text-slate-500 uppercase"\cf6 \strokec6 >\cf5 \strokec5 Balance Neto\cf6 \strokec6 </\cf2 \strokec2 p\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 h2\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "netBalance"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-2xl font-bold text-slate-800"\cf6 \strokec6 >\cf5 \strokec5 $0.00\cf6 \strokec6 </\cf2 \strokec2 h2\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "card border-l-4 border-l-orange-500"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 p\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-sm font-medium text-slate-500 uppercase"\cf6 \strokec6 >\cf5 \strokec5 Gastos Fijos\cf6 \strokec6 </\cf2 \strokec2 p\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 h2\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "fixedExpensesTotal"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-2xl font-bold text-orange-600"\cf6 \strokec6 >\cf5 \strokec5 $0.00\cf6 \strokec6 </\cf2 \strokec2 h2\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3         \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\
-\cb3         \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "grid grid-cols-1 lg:grid-cols-3 gap-8"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "lg:col-span-2 space-y-8"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "card"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 h3\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-lg font-bold text-slate-800 mb-4"\cf6 \strokec6 >\cf5 \strokec5 Movimientos de \cf6 \strokec6 <\cf2 \strokec2 span\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "currentMonthName"\cf6 \strokec6 >\cf5 \strokec5 ...\cf6 \strokec6 </\cf2 \strokec2 span\cf6 \strokec6 ></\cf2 \strokec2 h3\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "overflow-x-auto"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 table\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "w-full text-left"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                             \cf6 \strokec6 <\cf2 \strokec2 thead\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                                 \cf6 \strokec6 <\cf2 \strokec2 tr\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-slate-400 text-xs uppercase tracking-wider border-b"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                                     \cf6 \strokec6 <\cf2 \strokec2 th\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "pb-3 font-semibold"\cf6 \strokec6 >\cf5 \strokec5 Concepto\cf6 \strokec6 </\cf2 \strokec2 th\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                                     \cf6 \strokec6 <\cf2 \strokec2 th\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "pb-3 font-semibold"\cf6 \strokec6 >\cf5 \strokec5 Categor\'eda\cf6 \strokec6 </\cf2 \strokec2 th\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                                     \cf6 \strokec6 <\cf2 \strokec2 th\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "pb-3 font-semibold text-right"\cf6 \strokec6 >\cf5 \strokec5 Monto\cf6 \strokec6 </\cf2 \strokec2 th\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                                     \cf6 \strokec6 <\cf2 \strokec2 th\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "pb-3 font-semibold text-center"\cf6 \strokec6 >\cf5 \strokec5 Acci\'f3n\cf6 \strokec6 </\cf2 \strokec2 th\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                                 \cf6 \strokec6 </\cf2 \strokec2 tr\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                             \cf6 \strokec6 </\cf2 \strokec2 thead\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                             \cf6 \strokec6 <\cf2 \strokec2 tbody\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "transactionList"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-sm"\cf6 \strokec6 ></\cf2 \strokec2 tbody\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 </\cf2 \strokec2 table\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "grid grid-cols-1 md:grid-cols-2 gap-6"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "card"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 h3\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-lg font-bold text-slate-800 mb-4 text-center"\cf6 \strokec6 >\cf5 \strokec5 Gasto por Categor\'eda\cf6 \strokec6 </\cf2 \strokec2 h3\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 canvas\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "expenseChart"\cf5 \strokec5  \cf4 \strokec4 height\cf6 \strokec6 =\cf7 \strokec7 "250"\cf6 \strokec6 ></\cf2 \strokec2 canvas\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "card"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 h3\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-lg font-bold text-slate-800 mb-4 text-center"\cf6 \strokec6 >\cf5 \strokec5 Ingresos vs Gastos\cf6 \strokec6 </\cf2 \strokec2 h3\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 canvas\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "comparisonChart"\cf5 \strokec5  \cf4 \strokec4 height\cf6 \strokec6 =\cf7 \strokec7 "250"\cf6 \strokec6 ></\cf2 \strokec2 canvas\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\
-\cb3             \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "space-y-8"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "card bg-blue-50 border-dashed border-2 border-blue-200"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 h3\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \uc0\u55357 \u56524  Gastos Fijos (Globales)\cb1 \
-\cb3                     \cf6 \strokec6 </\cf2 \strokec2 h3\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 ul\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "fixedList"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "space-y-3 mb-4 text-sm"\cf6 \strokec6 ></\cf2 \strokec2 ul\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 button\cf5 \strokec5  \cf4 \strokec4 onclick\cf6 \strokec6 =\cf7 \strokec7 "openModal('fixedModal')"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "w-full py-2 text-sm text-blue-600 font-medium hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         Gestionar Gastos Fijos\cb1 \
-\cb3                     \cf6 \strokec6 </\cf2 \strokec2 button\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "card"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 h3\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-lg font-bold text-slate-800 mb-4"\cf6 \strokec6 >\cf5 \strokec5 Sesi\'f3n\cf6 \strokec6 </\cf2 \strokec2 h3\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "cloudInfo"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-xs text-slate-500 space-y-2"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 p\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "userIdDisplay"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "font-mono bg-slate-100 p-1 rounded break-all"\cf6 \strokec6 ></\cf2 \strokec2 p\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3         \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3     \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\
-\cb3     \cf11 \strokec11 <!-- Modals -->\cf5 \cb1 \strokec5 \
-\cb3     \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "transactionModal"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3         \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 <\cf2 \strokec2 h2\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-xl font-bold mb-4"\cf6 \strokec6 >\cf5 \strokec5 Nuevo Registro: \cf6 \strokec6 <\cf2 \strokec2 span\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "currentMonthName"\cf6 \strokec6 ></\cf2 \strokec2 span\cf6 \strokec6 ></\cf2 \strokec2 h2\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 <\cf2 \strokec2 form\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "transactionForm"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "space-y-4"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 label\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "block text-sm font-medium text-slate-700"\cf6 \strokec6 >\cf5 \strokec5 Tipo\cf6 \strokec6 </\cf2 \strokec2 label\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 select\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "tType"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "input-field"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 option\cf5 \strokec5  \cf4 \strokec4 value\cf6 \strokec6 =\cf7 \strokec7 "expense"\cf6 \strokec6 >\cf5 \strokec5 Gasto (-)\cf6 \strokec6 </\cf2 \strokec2 option\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 option\cf5 \strokec5  \cf4 \strokec4 value\cf6 \strokec6 =\cf7 \strokec7 "income"\cf6 \strokec6 >\cf5 \strokec5 Ingreso (+)\cf6 \strokec6 </\cf2 \strokec2 option\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 </\cf2 \strokec2 select\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 label\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "block text-sm font-medium text-slate-700"\cf6 \strokec6 >\cf5 \strokec5 Concepto\cf6 \strokec6 </\cf2 \strokec2 label\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 input\cf5 \strokec5  \cf4 \strokec4 type\cf6 \strokec6 =\cf7 \strokec7 "text"\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "tName"\cf5 \strokec5  \cf4 \strokec4 placeholder\cf6 \strokec6 =\cf7 \strokec7 "Ej. Supermercado"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "input-field"\cf5 \strokec5  \cf4 \strokec4 required\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 label\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "block text-sm font-medium text-slate-700"\cf6 \strokec6 >\cf5 \strokec5 Categor\'eda\cf6 \strokec6 </\cf2 \strokec2 label\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 select\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "tCategory"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "input-field"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 option\cf5 \strokec5  \cf4 \strokec4 value\cf6 \strokec6 =\cf7 \strokec7 "Servicios"\cf6 \strokec6 >\cf5 \strokec5 Servicios\cf6 \strokec6 </\cf2 \strokec2 option\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 option\cf5 \strokec5  \cf4 \strokec4 value\cf6 \strokec6 =\cf7 \strokec7 "Hogar y Transporte"\cf6 \strokec6 >\cf5 \strokec5 Hogar y Transporte\cf6 \strokec6 </\cf2 \strokec2 option\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 option\cf5 \strokec5  \cf4 \strokec4 value\cf6 \strokec6 =\cf7 \strokec7 "Alimentos"\cf6 \strokec6 >\cf5 \strokec5 Alimentos\cf6 \strokec6 </\cf2 \strokec2 option\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 option\cf5 \strokec5  \cf4 \strokec4 value\cf6 \strokec6 =\cf7 \strokec7 "Entretenimiento"\cf6 \strokec6 >\cf5 \strokec5 Entretenimiento\cf6 \strokec6 </\cf2 \strokec2 option\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 option\cf5 \strokec5  \cf4 \strokec4 value\cf6 \strokec6 =\cf7 \strokec7 "Cr\'e9ditos"\cf6 \strokec6 >\cf5 \strokec5 Cr\'e9ditos\cf6 \strokec6 </\cf2 \strokec2 option\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                         \cf6 \strokec6 <\cf2 \strokec2 option\cf5 \strokec5  \cf4 \strokec4 value\cf6 \strokec6 =\cf7 \strokec7 "Otros"\cf6 \strokec6 >\cf5 \strokec5 Otros\cf6 \strokec6 </\cf2 \strokec2 option\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 </\cf2 \strokec2 select\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 label\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "block text-sm font-medium text-slate-700"\cf6 \strokec6 >\cf5 \strokec5 Monto ($)\cf6 \strokec6 </\cf2 \strokec2 label\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 input\cf5 \strokec5  \cf4 \strokec4 type\cf6 \strokec6 =\cf7 \strokec7 "number"\cf5 \strokec5  \cf4 \strokec4 step\cf6 \strokec6 =\cf7 \strokec7 "0.01"\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "tAmount"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "input-field"\cf5 \strokec5  \cf4 \strokec4 required\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "flex gap-3 mt-6"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 button\cf5 \strokec5  \cf4 \strokec4 type\cf6 \strokec6 =\cf7 \strokec7 "button"\cf5 \strokec5  \cf4 \strokec4 onclick\cf6 \strokec6 =\cf7 \strokec7 "closeModal('transactionModal')"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "flex-1 py-2 bg-slate-100 text-slate-600 rounded-lg"\cf6 \strokec6 >\cf5 \strokec5 Cerrar\cf6 \strokec6 </\cf2 \strokec2 button\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                     \cf6 \strokec6 <\cf2 \strokec2 button\cf5 \strokec5  \cf4 \strokec4 type\cf6 \strokec6 =\cf7 \strokec7 "submit"\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "saveTransactionBtn"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "flex-1 btn-primary"\cf6 \strokec6 >\cf5 \strokec5 Guardar\cf6 \strokec6 </\cf2 \strokec2 button\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 </\cf2 \strokec2 form\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3         \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3     \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\
-\cb3     \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "fixedModal"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3         \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 <\cf2 \strokec2 h2\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "text-xl font-bold mb-4"\cf6 \strokec6 >\cf5 \strokec5 Gastos Fijos Globales\cf6 \strokec6 </\cf2 \strokec2 h2\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 <\cf2 \strokec2 form\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "fixedForm"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "flex gap-2 mb-4"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 input\cf5 \strokec5  \cf4 \strokec4 type\cf6 \strokec6 =\cf7 \strokec7 "text"\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "fName"\cf5 \strokec5  \cf4 \strokec4 placeholder\cf6 \strokec6 =\cf7 \strokec7 "Nombre"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "input-field"\cf5 \strokec5  \cf4 \strokec4 required\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 input\cf5 \strokec5  \cf4 \strokec4 type\cf6 \strokec6 =\cf7 \strokec7 "number"\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "fAmount"\cf5 \strokec5  \cf4 \strokec4 placeholder\cf6 \strokec6 =\cf7 \strokec7 "$"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "input-field w-24"\cf5 \strokec5  \cf4 \strokec4 required\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3                 \cf6 \strokec6 <\cf2 \strokec2 button\cf5 \strokec5  \cf4 \strokec4 type\cf6 \strokec6 =\cf7 \strokec7 "submit"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "btn-primary"\cf6 \strokec6 >\cf5 \strokec5 A\'f1adir\cf6 \strokec6 </\cf2 \strokec2 button\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 </\cf2 \strokec2 form\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 <\cf2 \strokec2 div\cf5 \strokec5  \cf4 \strokec4 id\cf6 \strokec6 =\cf7 \strokec7 "fixedSettingsList"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "max-h-64 overflow-y-auto border-t pt-4"\cf6 \strokec6 ></\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3             \cf6 \strokec6 <\cf2 \strokec2 button\cf5 \strokec5  \cf4 \strokec4 onclick\cf6 \strokec6 =\cf7 \strokec7 "closeModal('fixedModal')"\cf5 \strokec5  \cf4 \strokec4 class\cf6 \strokec6 =\cf7 \strokec7 "w-full mt-6 py-2 bg-slate-800 text-white rounded-lg"\cf6 \strokec6 >\cf5 \strokec5 Cerrar\cf6 \strokec6 </\cf2 \strokec2 button\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3         \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3     \cf6 \strokec6 </\cf2 \strokec2 div\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\
-\cb3     \cf6 \strokec6 <\cf2 \strokec2 script\cf5 \strokec5  \cf4 \strokec4 type\cf6 \strokec6 =\cf7 \strokec7 "module"\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cb3         \cf8 \strokec8 import\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \strokec5  initializeApp \cf9 \strokec9 \}\cf5 \strokec5  \cf8 \strokec8 from\cf5 \strokec5  \cf10 \strokec10 "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3         \cf8 \strokec8 import\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \strokec5  getAuth\cf9 \strokec9 ,\cf5 \strokec5  signInAnonymously\cf9 \strokec9 ,\cf5 \strokec5  onAuthStateChanged\cf9 \strokec9 ,\cf5 \strokec5  signInWithCustomToken \cf9 \strokec9 \}\cf5 \strokec5  \cf8 \strokec8 from\cf5 \strokec5  \cf10 \strokec10 "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3         \cf8 \strokec8 import\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \strokec5  getFirestore\cf9 \strokec9 ,\cf5 \strokec5  doc\cf9 \strokec9 ,\cf5 \strokec5  setDoc\cf9 \strokec9 ,\cf5 \strokec5  getDoc\cf9 \strokec9 ,\cf5 \strokec5  collection\cf9 \strokec9 ,\cf5 \strokec5  query\cf9 \strokec9 ,\cf5 \strokec5  onSnapshot\cf9 \strokec9 ,\cf5 \strokec5  addDoc\cf9 \strokec9 ,\cf5 \strokec5  deleteDoc \cf9 \strokec9 \}\cf5 \strokec5  \cf8 \strokec8 from\cf5 \strokec5  \cf10 \strokec10 "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\
-\cb3         \cf8 \strokec8 const\cf5 \strokec5  firebaseConfig \cf9 \strokec9 =\cf5 \strokec5  \cf12 \strokec12 JSON\cf9 \strokec9 .\cf5 \strokec5 parse\cf9 \strokec9 (\cf5 \strokec5 __firebase_config\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3         \cf8 \strokec8 const\cf5 \strokec5  app \cf9 \strokec9 =\cf5 \strokec5  initializeApp\cf9 \strokec9 (\cf5 \strokec5 firebaseConfig\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3         \cf8 \strokec8 const\cf5 \strokec5  auth \cf9 \strokec9 =\cf5 \strokec5  getAuth\cf9 \strokec9 (\cf5 \strokec5 app\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3         \cf8 \strokec8 const\cf5 \strokec5  db \cf9 \strokec9 =\cf5 \strokec5  getFirestore\cf9 \strokec9 (\cf5 \strokec5 app\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3         \cf8 \strokec8 const\cf5 \strokec5  appId \cf9 \strokec9 =\cf5 \strokec5  \cf8 \strokec8 typeof\cf5 \strokec5  __app_id \cf9 \strokec9 !==\cf5 \strokec5  \cf10 \strokec10 'undefined'\cf5 \strokec5  \cf9 \strokec9 ?\cf5 \strokec5  __app_id \cf9 \strokec9 :\cf5 \strokec5  \cf10 \strokec10 'finanzas-pro-app'\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\
-\cb3         \cf8 \strokec8 let\cf5 \strokec5  currentUser \cf9 \strokec9 =\cf5 \strokec5  \cf8 \strokec8 null\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3         \cf8 \strokec8 let\cf5 \strokec5  currentMonth \cf9 \strokec9 =\cf5 \strokec5  \cf8 \strokec8 new\cf5 \strokec5  \cf12 \strokec12 Date\cf9 \strokec9 ().\cf5 \strokec5 toLocaleString\cf9 \strokec9 (\cf10 \strokec10 'es-ES'\cf9 \strokec9 ,\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \strokec5  month\cf9 \strokec9 :\cf5 \strokec5  \cf10 \strokec10 'long'\cf5 \strokec5  \cf9 \strokec9 \});\cf5 \cb1 \strokec5 \
-\cb3         currentMonth \cf9 \strokec9 =\cf5 \strokec5  currentMonth\cf9 \strokec9 .\cf5 \strokec5 charAt\cf9 \strokec9 (\cf13 \strokec13 0\cf9 \strokec9 ).\cf5 \strokec5 toUpperCase\cf9 \strokec9 ()\cf5 \strokec5  \cf9 \strokec9 +\cf5 \strokec5  currentMonth\cf9 \strokec9 .\cf5 \strokec5 slice\cf9 \strokec9 (\cf13 \strokec13 1\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3         \cb1 \
-\cb3         \cf8 \strokec8 let\cf5 \strokec5  expenseChart \cf9 \strokec9 =\cf5 \strokec5  \cf8 \strokec8 null\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3         \cf8 \strokec8 let\cf5 \strokec5  comparisonChart \cf9 \strokec9 =\cf5 \strokec5  \cf8 \strokec8 null\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\
-\cb3         \cf8 \strokec8 const\cf5 \strokec5  initAuth \cf9 \strokec9 =\cf5 \strokec5  \cf8 \strokec8 async\cf5 \strokec5  \cf9 \strokec9 ()\cf5 \strokec5  \cf9 \strokec9 =>\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3             \cf8 \strokec8 try\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3                 \cf8 \strokec8 if\cf5 \strokec5  \cf9 \strokec9 (\cf8 \strokec8 typeof\cf5 \strokec5  __initial_auth_token \cf9 \strokec9 !==\cf5 \strokec5  \cf10 \strokec10 'undefined'\cf5 \strokec5  \cf9 \strokec9 &&\cf5 \strokec5  __initial_auth_token\cf9 \strokec9 )\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3                     \cf8 \strokec8 await\cf5 \strokec5  signInWithCustomToken\cf9 \strokec9 (\cf5 \strokec5 auth\cf9 \strokec9 ,\cf5 \strokec5  __initial_auth_token\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3                 \cf9 \strokec9 \}\cf5 \strokec5  \cf8 \strokec8 else\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3                     \cf8 \strokec8 await\cf5 \strokec5  signInAnonymously\cf9 \strokec9 (\cf5 \strokec5 auth\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3                 \cf9 \strokec9 \}\cf5 \cb1 \strokec5 \
-\cb3             \cf9 \strokec9 \}\cf5 \strokec5  \cf8 \strokec8 catch\cf5 \strokec5  \cf9 \strokec9 (\cf5 \strokec5 error\cf9 \strokec9 )\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \strokec5  console\cf9 \strokec9 .\cf5 \strokec5 error\cf9 \strokec9 (\cf10 \strokec10 "Error auth:"\cf9 \strokec9 ,\cf5 \strokec5  error\cf9 \strokec9 );\cf5 \strokec5  \cf9 \strokec9 \}\cf5 \cb1 \strokec5 \
-\cb3         \cf9 \strokec9 \};\cf5 \cb1 \strokec5 \
-\
-\cb3         onAuthStateChanged\cf9 \strokec9 (\cf5 \strokec5 auth\cf9 \strokec9 ,\cf5 \strokec5  \cf9 \strokec9 (\cf5 \strokec5 user\cf9 \strokec9 )\cf5 \strokec5  \cf9 \strokec9 =>\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3             \cf8 \strokec8 if\cf5 \strokec5  \cf9 \strokec9 (\cf5 \strokec5 user\cf9 \strokec9 )\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3                 currentUser \cf9 \strokec9 =\cf5 \strokec5  user\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3                 document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'userIdDisplay'\cf9 \strokec9 ).\cf5 \strokec5 innerText \cf9 \strokec9 =\cf5 \strokec5  \cf10 \strokec10 `ID: \cf9 \strokec9 $\{\cf5 \strokec5 user\cf9 \strokec9 .\cf5 \strokec5 uid\cf9 \strokec9 \}\cf10 \strokec10 `\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3                 document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'loadingOverlay'\cf9 \strokec9 ).\cf5 \strokec5 style\cf9 \strokec9 .\cf5 \strokec5 display \cf9 \strokec9 =\cf5 \strokec5  \cf10 \strokec10 'none'\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3                 setupRealtimeListeners\cf9 \strokec9 ();\cf5 \cb1 \strokec5 \
-\cb3             \cf9 \strokec9 \}\cf5 \cb1 \strokec5 \
-\cb3         \cf9 \strokec9 \});\cf5 \cb1 \strokec5 \
-\
-\cb3         \cf8 \strokec8 let\cf5 \strokec5  unsubTransactions \cf9 \strokec9 =\cf5 \strokec5  \cf8 \strokec8 null\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3         \cf8 \strokec8 let\cf5 \strokec5  unsubFixed \cf9 \strokec9 =\cf5 \strokec5  \cf8 \strokec8 null\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\
-\cb3         \cf8 \strokec8 const\cf5 \strokec5  setupRealtimeListeners \cf9 \strokec9 =\cf5 \strokec5  \cf9 \strokec9 ()\cf5 \strokec5  \cf9 \strokec9 =>\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3             \cf8 \strokec8 if\cf5 \strokec5  \cf9 \strokec9 (!\cf5 \strokec5 currentUser\cf9 \strokec9 )\cf5 \strokec5  \cf8 \strokec8 return\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3             \cf8 \strokec8 if\cf5 \strokec5  \cf9 \strokec9 (\cf5 \strokec5 unsubTransactions\cf9 \strokec9 )\cf5 \strokec5  unsubTransactions\cf9 \strokec9 ();\cf5 \cb1 \strokec5 \
-\cb3             \cf8 \strokec8 if\cf5 \strokec5  \cf9 \strokec9 (\cf5 \strokec5 unsubFixed\cf9 \strokec9 )\cf5 \strokec5  unsubFixed\cf9 \strokec9 ();\cf5 \cb1 \strokec5 \
-\
-\cb3             \cf8 \strokec8 const\cf5 \strokec5  transRef \cf9 \strokec9 =\cf5 \strokec5  collection\cf9 \strokec9 (\cf5 \strokec5 db\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 'artifacts'\cf9 \strokec9 ,\cf5 \strokec5  appId\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 'users'\cf9 \strokec9 ,\cf5 \strokec5  currentUser\cf9 \strokec9 .\cf5 \strokec5 uid\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 'transactions'\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3             unsubTransactions \cf9 \strokec9 =\cf5 \strokec5  onSnapshot\cf9 \strokec9 (\cf5 \strokec5 transRef\cf9 \strokec9 ,\cf5 \strokec5  \cf9 \strokec9 (\cf5 \strokec5 snapshot\cf9 \strokec9 )\cf5 \strokec5  \cf9 \strokec9 =>\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3                 \cf8 \strokec8 const\cf5 \strokec5  transactions \cf9 \strokec9 =\cf5 \strokec5  \cf9 \strokec9 [];\cf5 \cb1 \strokec5 \
-\cb3                 snapshot\cf9 \strokec9 .\cf5 \strokec5 forEach\cf9 \strokec9 (\cf5 \strokec5 doc \cf9 \strokec9 =>\cf5 \strokec5  transactions\cf9 \strokec9 .\cf5 \strokec5 push\cf9 \strokec9 (\{\cf5 \strokec5  id\cf9 \strokec9 :\cf5 \strokec5  doc\cf9 \strokec9 .\cf5 \strokec5 id\cf9 \strokec9 ,\cf5 \strokec5  \cf9 \strokec9 ...\cf5 \strokec5 doc\cf9 \strokec9 .\cf5 \strokec5 data\cf9 \strokec9 ()\cf5 \strokec5  \cf9 \strokec9 \}));\cf5 \cb1 \strokec5 \
-\cb3                 renderTransactions\cf9 \strokec9 (\cf5 \strokec5 transactions\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3             \cf9 \strokec9 \},\cf5 \strokec5  \cf9 \strokec9 (\cf5 \strokec5 err\cf9 \strokec9 )\cf5 \strokec5  \cf9 \strokec9 =>\cf5 \strokec5  console\cf9 \strokec9 .\cf5 \strokec5 error\cf9 \strokec9 (\cf5 \strokec5 err\cf9 \strokec9 ));\cf5 \cb1 \strokec5 \
-\
-\cb3             \cf8 \strokec8 const\cf5 \strokec5  fixedRef \cf9 \strokec9 =\cf5 \strokec5  collection\cf9 \strokec9 (\cf5 \strokec5 db\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 'artifacts'\cf9 \strokec9 ,\cf5 \strokec5  appId\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 'users'\cf9 \strokec9 ,\cf5 \strokec5  currentUser\cf9 \strokec9 .\cf5 \strokec5 uid\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 'fixedExpenses'\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3             unsubFixed \cf9 \strokec9 =\cf5 \strokec5  onSnapshot\cf9 \strokec9 (\cf5 \strokec5 fixedRef\cf9 \strokec9 ,\cf5 \strokec5  \cf9 \strokec9 (\cf5 \strokec5 snapshot\cf9 \strokec9 )\cf5 \strokec5  \cf9 \strokec9 =>\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3                 \cf8 \strokec8 const\cf5 \strokec5  fixed \cf9 \strokec9 =\cf5 \strokec5  \cf9 \strokec9 [];\cf5 \cb1 \strokec5 \
-\cb3                 snapshot\cf9 \strokec9 .\cf5 \strokec5 forEach\cf9 \strokec9 (\cf5 \strokec5 doc \cf9 \strokec9 =>\cf5 \strokec5  fixed\cf9 \strokec9 .\cf5 \strokec5 push\cf9 \strokec9 (\{\cf5 \strokec5  id\cf9 \strokec9 :\cf5 \strokec5  doc\cf9 \strokec9 .\cf5 \strokec5 id\cf9 \strokec9 ,\cf5 \strokec5  \cf9 \strokec9 ...\cf5 \strokec5 doc\cf9 \strokec9 .\cf5 \strokec5 data\cf9 \strokec9 ()\cf5 \strokec5  \cf9 \strokec9 \}));\cf5 \cb1 \strokec5 \
-\cb3                 renderFixed\cf9 \strokec9 (\cf5 \strokec5 fixed\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3             \cf9 \strokec9 \},\cf5 \strokec5  \cf9 \strokec9 (\cf5 \strokec5 err\cf9 \strokec9 )\cf5 \strokec5  \cf9 \strokec9 =>\cf5 \strokec5  console\cf9 \strokec9 .\cf5 \strokec5 error\cf9 \strokec9 (\cf5 \strokec5 err\cf9 \strokec9 ));\cf5 \cb1 \strokec5 \
-\cb3         \cf9 \strokec9 \};\cf5 \cb1 \strokec5 \
-\
-\cb3         \cf8 \strokec8 const\cf5 \strokec5  renderTransactions \cf9 \strokec9 =\cf5 \strokec5  \cf9 \strokec9 (\cf5 \strokec5 allTransactions\cf9 \strokec9 )\cf5 \strokec5  \cf9 \strokec9 =>\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3             \cf8 \strokec8 const\cf5 \strokec5  list \cf9 \strokec9 =\cf5 \strokec5  document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'transactionList'\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3             list\cf9 \strokec9 .\cf5 \strokec5 innerHTML \cf9 \strokec9 =\cf5 \strokec5  \cf10 \strokec10 ''\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3             \cf8 \strokec8 const\cf5 \strokec5  filtered \cf9 \strokec9 =\cf5 \strokec5  allTransactions\cf9 \strokec9 .\cf5 \strokec5 filter\cf9 \strokec9 (\cf5 \strokec5 t \cf9 \strokec9 =>\cf5 \strokec5  t\cf9 \strokec9 .\cf5 \strokec5 month \cf9 \strokec9 ===\cf5 \strokec5  currentMonth\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3             \cb1 \
-\cb3             \cf8 \strokec8 let\cf5 \strokec5  incomes \cf9 \strokec9 =\cf5 \strokec5  \cf13 \strokec13 0\cf9 \strokec9 ,\cf5 \strokec5  expenses \cf9 \strokec9 =\cf5 \strokec5  \cf13 \strokec13 0\cf9 \strokec9 ,\cf5 \strokec5  catTotals \cf9 \strokec9 =\cf5 \strokec5  \cf9 \strokec9 \{\};\cf5 \cb1 \strokec5 \
-\
-\cb3             filtered\cf9 \strokec9 .\cf5 \strokec5 forEach\cf9 \strokec9 (\cf5 \strokec5 t \cf9 \strokec9 =>\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3                 \cf8 \strokec8 if\cf9 \strokec9 (\cf5 \strokec5 t\cf9 \strokec9 .\cf5 \strokec5 type \cf9 \strokec9 ===\cf5 \strokec5  \cf10 \strokec10 'income'\cf9 \strokec9 )\cf5 \strokec5  incomes \cf9 \strokec9 +=\cf5 \strokec5  t\cf9 \strokec9 .\cf5 \strokec5 amount\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3                 \cf8 \strokec8 else\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3                     expenses \cf9 \strokec9 +=\cf5 \strokec5  t\cf9 \strokec9 .\cf5 \strokec5 amount\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3                     catTotals\cf9 \strokec9 [\cf5 \strokec5 t\cf9 \strokec9 .\cf5 \strokec5 category\cf9 \strokec9 ]\cf5 \strokec5  \cf9 \strokec9 =\cf5 \strokec5  \cf9 \strokec9 (\cf5 \strokec5 catTotals\cf9 \strokec9 [\cf5 \strokec5 t\cf9 \strokec9 .\cf5 \strokec5 category\cf9 \strokec9 ]\cf5 \strokec5  \cf9 \strokec9 ||\cf5 \strokec5  \cf13 \strokec13 0\cf9 \strokec9 )\cf5 \strokec5  \cf9 \strokec9 +\cf5 \strokec5  t\cf9 \strokec9 .\cf5 \strokec5 amount\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3                 \cf9 \strokec9 \}\cf5 \cb1 \strokec5 \
-\cb3                 \cf8 \strokec8 const\cf5 \strokec5  tr \cf9 \strokec9 =\cf5 \strokec5  document\cf9 \strokec9 .\cf5 \strokec5 createElement\cf9 \strokec9 (\cf10 \strokec10 'tr'\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3                 tr\cf9 \strokec9 .\cf5 \strokec5 className \cf9 \strokec9 =\cf5 \strokec5  \cf10 \strokec10 "border-b hover:bg-slate-50 transition-colors"\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3                 tr\cf9 \strokec9 .\cf5 \strokec5 innerHTML \cf9 \strokec9 =\cf5 \strokec5  \cf10 \strokec10 `\cf5 \cb1 \strokec5 \
-\pard\pardeftab720\partightenfactor0
-\cf10 \cb3 \strokec10                     <td class="py-4 font-medium text-slate-700">\cf9 \strokec9 $\{\cf5 \strokec5 t\cf9 \strokec9 .\cf5 \strokec5 name\cf9 \strokec9 \}\cf10 \strokec10 </td>\cf5 \cb1 \strokec5 \
-\cf10 \cb3 \strokec10                     <td class="py-4 text-slate-500"><span class="bg-slate-100 px-2 py-1 rounded text-xs">\cf9 \strokec9 $\{\cf5 \strokec5 t\cf9 \strokec9 .\cf5 \strokec5 category\cf9 \strokec9 \}\cf10 \strokec10 </span></td>\cf5 \cb1 \strokec5 \
-\cf10 \cb3 \strokec10                     <td class="py-4 text-right font-bold \cf9 \strokec9 $\{\cf5 \strokec5 t\cf9 \strokec9 .\cf5 \strokec5 type \cf9 \strokec9 ===\cf5 \strokec5  \cf10 \strokec10 'income'\cf5 \strokec5  \cf9 \strokec9 ?\cf5 \strokec5  \cf10 \strokec10 'text-green-600'\cf5 \strokec5  \cf9 \strokec9 :\cf5 \strokec5  \cf10 \strokec10 'text-red-500'\cf9 \strokec9 \}\cf10 \strokec10 ">\cf5 \cb1 \strokec5 \
-\cf10 \cb3 \strokec10                         \cf9 \strokec9 $\{\cf5 \strokec5 t\cf9 \strokec9 .\cf5 \strokec5 type \cf9 \strokec9 ===\cf5 \strokec5  \cf10 \strokec10 'income'\cf5 \strokec5  \cf9 \strokec9 ?\cf5 \strokec5  \cf10 \strokec10 '+'\cf5 \strokec5  \cf9 \strokec9 :\cf5 \strokec5  \cf10 \strokec10 '-'\cf9 \strokec9 \}\cf14 \strokec14 $\cf9 \strokec9 $\{\cf5 \strokec5 t\cf9 \strokec9 .\cf5 \strokec5 amount\cf9 \strokec9 .\cf5 \strokec5 toLocaleString\cf9 \strokec9 ()\}\cf5 \cb1 \strokec5 \
-\cf10 \cb3 \strokec10                     </td>\cf5 \cb1 \strokec5 \
-\cf10 \cb3 \strokec10                     <td class="py-4 text-center">\cf5 \cb1 \strokec5 \
-\cf10 \cb3 \strokec10                         <button class="delete-btn text-slate-300 hover:text-red-500" data-id="\cf9 \strokec9 $\{\cf5 \strokec5 t\cf9 \strokec9 .\cf5 \strokec5 id\cf9 \strokec9 \}\cf10 \strokec10 ">\uc0\u10005 </button>\cf5 \cb1 \strokec5 \
-\cf10 \cb3 \strokec10                     </td>`\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\pard\pardeftab720\partightenfactor0
-\cf5 \cb3                 list\cf9 \strokec9 .\cf5 \strokec5 appendChild\cf9 \strokec9 (\cf5 \strokec5 tr\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3             \cf9 \strokec9 \});\cf5 \cb1 \strokec5 \
-\
-\cb3             document\cf9 \strokec9 .\cf5 \strokec5 querySelectorAll\cf9 \strokec9 (\cf10 \strokec10 '.delete-btn'\cf9 \strokec9 ).\cf5 \strokec5 forEach\cf9 \strokec9 (\cf5 \strokec5 btn \cf9 \strokec9 =>\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3                 btn\cf9 \strokec9 .\cf5 \strokec5 onclick \cf9 \strokec9 =\cf5 \strokec5  \cf9 \strokec9 ()\cf5 \strokec5  \cf9 \strokec9 =>\cf5 \strokec5  deleteDoc\cf9 \strokec9 (\cf5 \strokec5 doc\cf9 \strokec9 (\cf5 \strokec5 db\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 'artifacts'\cf9 \strokec9 ,\cf5 \strokec5  appId\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 'users'\cf9 \strokec9 ,\cf5 \strokec5  currentUser\cf9 \strokec9 .\cf5 \strokec5 uid\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 'transactions'\cf9 \strokec9 ,\cf5 \strokec5  btn\cf9 \strokec9 .\cf5 \strokec5 dataset\cf9 \strokec9 .\cf5 \strokec5 id\cf9 \strokec9 ));\cf5 \cb1 \strokec5 \
-\cb3             \cf9 \strokec9 \});\cf5 \cb1 \strokec5 \
-\
-\cb3             document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'totalIncomes'\cf9 \strokec9 ).\cf5 \strokec5 innerText \cf9 \strokec9 =\cf5 \strokec5  \cf10 \strokec10 `\cf14 \strokec14 $\cf9 \strokec9 $\{\cf5 \strokec5 incomes\cf9 \strokec9 .\cf5 \strokec5 toLocaleString\cf9 \strokec9 ()\}\cf10 \strokec10 `\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3             document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'totalExpenses'\cf9 \strokec9 ).\cf5 \strokec5 innerText \cf9 \strokec9 =\cf5 \strokec5  \cf10 \strokec10 `\cf14 \strokec14 $\cf9 \strokec9 $\{\cf5 \strokec5 expenses\cf9 \strokec9 .\cf5 \strokec5 toLocaleString\cf9 \strokec9 ()\}\cf10 \strokec10 `\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3             document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'netBalance'\cf9 \strokec9 ).\cf5 \strokec5 innerText \cf9 \strokec9 =\cf5 \strokec5  \cf10 \strokec10 `\cf14 \strokec14 $\cf9 \strokec9 $\{(\cf5 \strokec5 incomes \cf9 \strokec9 -\cf5 \strokec5  expenses\cf9 \strokec9 ).\cf5 \strokec5 toLocaleString\cf9 \strokec9 ()\}\cf10 \strokec10 `\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3             document\cf9 \strokec9 .\cf5 \strokec5 querySelectorAll\cf9 \strokec9 (\cf10 \strokec10 '.currentMonthName'\cf9 \strokec9 ).\cf5 \strokec5 forEach\cf9 \strokec9 (\cf5 \strokec5 el \cf9 \strokec9 =>\cf5 \strokec5  el\cf9 \strokec9 .\cf5 \strokec5 innerText \cf9 \strokec9 =\cf5 \strokec5  currentMonth\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3             updateCharts\cf9 \strokec9 (\cf5 \strokec5 catTotals\cf9 \strokec9 ,\cf5 \strokec5  incomes\cf9 \strokec9 ,\cf5 \strokec5  expenses\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3         \cf9 \strokec9 \};\cf5 \cb1 \strokec5 \
-\
-\cb3         \cf8 \strokec8 const\cf5 \strokec5  renderFixed \cf9 \strokec9 =\cf5 \strokec5  \cf9 \strokec9 (\cf5 \strokec5 fixedExpenses\cf9 \strokec9 )\cf5 \strokec5  \cf9 \strokec9 =>\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3             \cf8 \strokec8 const\cf5 \strokec5  list \cf9 \strokec9 =\cf5 \strokec5  document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'fixedList'\cf9 \strokec9 ),\cf5 \strokec5  settings \cf9 \strokec9 =\cf5 \strokec5  document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'fixedSettingsList'\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3             list\cf9 \strokec9 .\cf5 \strokec5 innerHTML \cf9 \strokec9 =\cf5 \strokec5  \cf10 \strokec10 ''\cf9 \strokec9 ;\cf5 \strokec5  settings\cf9 \strokec9 .\cf5 \strokec5 innerHTML \cf9 \strokec9 =\cf5 \strokec5  \cf10 \strokec10 ''\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3             \cf8 \strokec8 let\cf5 \strokec5  total \cf9 \strokec9 =\cf5 \strokec5  \cf13 \strokec13 0\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3             fixedExpenses\cf9 \strokec9 .\cf5 \strokec5 forEach\cf9 \strokec9 (\cf5 \strokec5 f \cf9 \strokec9 =>\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3                 total \cf9 \strokec9 +=\cf5 \strokec5  f\cf9 \strokec9 .\cf5 \strokec5 amount\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3                 list\cf9 \strokec9 .\cf5 \strokec5 innerHTML \cf9 \strokec9 +=\cf5 \strokec5  \cf10 \strokec10 `<li class="flex justify-between items-center text-slate-600"><span>\cf9 \strokec9 $\{\cf5 \strokec5 f\cf9 \strokec9 .\cf5 \strokec5 name\cf9 \strokec9 \}\cf10 \strokec10 </span><span class="font-semibold">\cf14 \strokec14 $\cf9 \strokec9 $\{\cf5 \strokec5 f\cf9 \strokec9 .\cf5 \strokec5 amount\cf9 \strokec9 .\cf5 \strokec5 toLocaleString\cf9 \strokec9 ()\}\cf10 \strokec10 </span></li>`\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3                 settings\cf9 \strokec9 .\cf5 \strokec5 innerHTML \cf9 \strokec9 +=\cf5 \strokec5  \cf10 \strokec10 `<div class="flex justify-between items-center bg-slate-50 p-2 mb-2 rounded border"><span>\cf9 \strokec9 $\{\cf5 \strokec5 f\cf9 \strokec9 .\cf5 \strokec5 name\cf9 \strokec9 \}\cf10 \strokec10  (\cf14 \strokec14 $\cf9 \strokec9 $\{\cf5 \strokec5 f\cf9 \strokec9 .\cf5 \strokec5 amount\cf9 \strokec9 \}\cf10 \strokec10 )</span><button class="delete-fixed text-red-500 text-xs" data-id="\cf9 \strokec9 $\{\cf5 \strokec5 f\cf9 \strokec9 .\cf5 \strokec5 id\cf9 \strokec9 \}\cf10 \strokec10 ">ELIMINAR</button></div>`\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3             \cf9 \strokec9 \});\cf5 \cb1 \strokec5 \
-\cb3             document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'fixedExpensesTotal'\cf9 \strokec9 ).\cf5 \strokec5 innerText \cf9 \strokec9 =\cf5 \strokec5  \cf10 \strokec10 `\cf14 \strokec14 $\cf9 \strokec9 $\{\cf5 \strokec5 total\cf9 \strokec9 .\cf5 \strokec5 toLocaleString\cf9 \strokec9 ()\}\cf10 \strokec10 `\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3             document\cf9 \strokec9 .\cf5 \strokec5 querySelectorAll\cf9 \strokec9 (\cf10 \strokec10 '.delete-fixed'\cf9 \strokec9 ).\cf5 \strokec5 forEach\cf9 \strokec9 (\cf5 \strokec5 btn \cf9 \strokec9 =>\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3                 btn\cf9 \strokec9 .\cf5 \strokec5 onclick \cf9 \strokec9 =\cf5 \strokec5  \cf9 \strokec9 ()\cf5 \strokec5  \cf9 \strokec9 =>\cf5 \strokec5  deleteDoc\cf9 \strokec9 (\cf5 \strokec5 doc\cf9 \strokec9 (\cf5 \strokec5 db\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 'artifacts'\cf9 \strokec9 ,\cf5 \strokec5  appId\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 'users'\cf9 \strokec9 ,\cf5 \strokec5  currentUser\cf9 \strokec9 .\cf5 \strokec5 uid\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 'fixedExpenses'\cf9 \strokec9 ,\cf5 \strokec5  btn\cf9 \strokec9 .\cf5 \strokec5 dataset\cf9 \strokec9 .\cf5 \strokec5 id\cf9 \strokec9 ));\cf5 \cb1 \strokec5 \
-\cb3             \cf9 \strokec9 \});\cf5 \cb1 \strokec5 \
-\cb3         \cf9 \strokec9 \};\cf5 \cb1 \strokec5 \
-\
-\cb3         \cf8 \strokec8 const\cf5 \strokec5  updateCharts \cf9 \strokec9 =\cf5 \strokec5  \cf9 \strokec9 (\cf5 \strokec5 catTotals\cf9 \strokec9 ,\cf5 \strokec5  incomes\cf9 \strokec9 ,\cf5 \strokec5  expenses\cf9 \strokec9 )\cf5 \strokec5  \cf9 \strokec9 =>\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3             \cf8 \strokec8 const\cf5 \strokec5  ctx1 \cf9 \strokec9 =\cf5 \strokec5  document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'expenseChart'\cf9 \strokec9 ),\cf5 \strokec5  ctx2 \cf9 \strokec9 =\cf5 \strokec5  document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'comparisonChart'\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3             \cf8 \strokec8 if\cf9 \strokec9 (\cf5 \strokec5 expenseChart\cf9 \strokec9 )\cf5 \strokec5  expenseChart\cf9 \strokec9 .\cf5 \strokec5 destroy\cf9 \strokec9 ();\cf5 \cb1 \strokec5 \
-\cb3             \cf8 \strokec8 if\cf9 \strokec9 (\cf5 \strokec5 comparisonChart\cf9 \strokec9 )\cf5 \strokec5  comparisonChart\cf9 \strokec9 .\cf5 \strokec5 destroy\cf9 \strokec9 ();\cf5 \cb1 \strokec5 \
-\cb3             expenseChart \cf9 \strokec9 =\cf5 \strokec5  \cf8 \strokec8 new\cf5 \strokec5  \cf12 \strokec12 Chart\cf9 \strokec9 (\cf5 \strokec5 ctx1\cf9 \strokec9 ,\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \strokec5  type\cf9 \strokec9 :\cf5 \strokec5  \cf10 \strokec10 'doughnut'\cf9 \strokec9 ,\cf5 \strokec5  data\cf9 \strokec9 :\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \strokec5  labels\cf9 \strokec9 :\cf5 \strokec5  \cf12 \strokec12 Object\cf9 \strokec9 .\cf5 \strokec5 keys\cf9 \strokec9 (\cf5 \strokec5 catTotals\cf9 \strokec9 ),\cf5 \strokec5  datasets\cf9 \strokec9 :\cf5 \strokec5  \cf9 \strokec9 [\{\cf5 \strokec5  data\cf9 \strokec9 :\cf5 \strokec5  \cf12 \strokec12 Object\cf9 \strokec9 .\cf5 \strokec5 values\cf9 \strokec9 (\cf5 \strokec5 catTotals\cf9 \strokec9 ),\cf5 \strokec5  backgroundColor\cf9 \strokec9 :\cf5 \strokec5  \cf9 \strokec9 [\cf10 \strokec10 '#3b82f6'\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 '#ef4444'\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 '#f59e0b'\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 '#10b981'\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 '#6366f1'\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 '#94a3b8'\cf9 \strokec9 ]\cf5 \strokec5  \cf9 \strokec9 \}]\cf5 \strokec5  \cf9 \strokec9 \}\cf5 \strokec5  \cf9 \strokec9 \});\cf5 \cb1 \strokec5 \
-\cb3             comparisonChart \cf9 \strokec9 =\cf5 \strokec5  \cf8 \strokec8 new\cf5 \strokec5  \cf12 \strokec12 Chart\cf9 \strokec9 (\cf5 \strokec5 ctx2\cf9 \strokec9 ,\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \strokec5  type\cf9 \strokec9 :\cf5 \strokec5  \cf10 \strokec10 'bar'\cf9 \strokec9 ,\cf5 \strokec5  data\cf9 \strokec9 :\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \strokec5  labels\cf9 \strokec9 :\cf5 \strokec5  \cf9 \strokec9 [\cf5 \strokec5 currentMonth\cf9 \strokec9 ],\cf5 \strokec5  datasets\cf9 \strokec9 :\cf5 \strokec5  \cf9 \strokec9 [\{\cf5 \strokec5  label\cf9 \strokec9 :\cf5 \strokec5  \cf10 \strokec10 'Ingresos'\cf9 \strokec9 ,\cf5 \strokec5  data\cf9 \strokec9 :\cf5 \strokec5  \cf9 \strokec9 [\cf5 \strokec5 incomes\cf9 \strokec9 ],\cf5 \strokec5  backgroundColor\cf9 \strokec9 :\cf5 \strokec5  \cf10 \strokec10 '#10b981'\cf5 \strokec5  \cf9 \strokec9 \},\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \strokec5  label\cf9 \strokec9 :\cf5 \strokec5  \cf10 \strokec10 'Gastos'\cf9 \strokec9 ,\cf5 \strokec5  data\cf9 \strokec9 :\cf5 \strokec5  \cf9 \strokec9 [\cf5 \strokec5 expenses\cf9 \strokec9 ],\cf5 \strokec5  backgroundColor\cf9 \strokec9 :\cf5 \strokec5  \cf10 \strokec10 '#ef4444'\cf5 \strokec5  \cf9 \strokec9 \}]\cf5 \strokec5  \cf9 \strokec9 \}\cf5 \strokec5  \cf9 \strokec9 \});\cf5 \cb1 \strokec5 \
-\cb3         \cf9 \strokec9 \};\cf5 \cb1 \strokec5 \
-\
-\cb3         \cf11 \strokec11 // Exponer funciones al \'e1mbito global (window) para que funcionen con onclick\cf5 \cb1 \strokec5 \
-\cb3         window\cf9 \strokec9 .\cf5 \strokec5 handleMonthChange \cf9 \strokec9 =\cf5 \strokec5  \cf9 \strokec9 ()\cf5 \strokec5  \cf9 \strokec9 =>\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3             currentMonth \cf9 \strokec9 =\cf5 \strokec5  document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'monthSelector'\cf9 \strokec9 ).\cf5 \strokec5 value\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3             setupRealtimeListeners\cf9 \strokec9 ();\cf5 \cb1 \strokec5 \
-\cb3         \cf9 \strokec9 \};\cf5 \cb1 \strokec5 \
-\
-\cb3         window\cf9 \strokec9 .\cf5 \strokec5 openModal \cf9 \strokec9 =\cf5 \strokec5  \cf9 \strokec9 (\cf5 \strokec5 id\cf9 \strokec9 )\cf5 \strokec5  \cf9 \strokec9 =>\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3             document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf5 \strokec5 id\cf9 \strokec9 ).\cf5 \strokec5 classList\cf9 \strokec9 .\cf5 \strokec5 remove\cf9 \strokec9 (\cf10 \strokec10 'hidden'\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3             document\cf9 \strokec9 .\cf5 \strokec5 querySelectorAll\cf9 \strokec9 (\cf10 \strokec10 '.currentMonthName'\cf9 \strokec9 ).\cf5 \strokec5 forEach\cf9 \strokec9 (\cf5 \strokec5 el \cf9 \strokec9 =>\cf5 \strokec5  el\cf9 \strokec9 .\cf5 \strokec5 innerText \cf9 \strokec9 =\cf5 \strokec5  currentMonth\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3         \cf9 \strokec9 \};\cf5 \cb1 \strokec5 \
-\
-\cb3         window\cf9 \strokec9 .\cf5 \strokec5 closeModal \cf9 \strokec9 =\cf5 \strokec5  \cf9 \strokec9 (\cf5 \strokec5 id\cf9 \strokec9 )\cf5 \strokec5  \cf9 \strokec9 =>\cf5 \strokec5  document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf5 \strokec5 id\cf9 \strokec9 ).\cf5 \strokec5 classList\cf9 \strokec9 .\cf5 \strokec5 add\cf9 \strokec9 (\cf10 \strokec10 'hidden'\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\
-\cb3         document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'transactionForm'\cf9 \strokec9 ).\cf5 \strokec5 onsubmit \cf9 \strokec9 =\cf5 \strokec5  \cf8 \strokec8 async\cf5 \strokec5  \cf9 \strokec9 (\cf5 \strokec5 e\cf9 \strokec9 )\cf5 \strokec5  \cf9 \strokec9 =>\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3             e\cf9 \strokec9 .\cf5 \strokec5 preventDefault\cf9 \strokec9 ();\cf5 \cb1 \strokec5 \
-\cb3             \cf8 \strokec8 if\cf5 \strokec5  \cf9 \strokec9 (!\cf5 \strokec5 currentUser\cf9 \strokec9 )\cf5 \strokec5  \cf8 \strokec8 return\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3             \cf8 \strokec8 const\cf5 \strokec5  btn \cf9 \strokec9 =\cf5 \strokec5  document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'saveTransactionBtn'\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3             btn\cf9 \strokec9 .\cf5 \strokec5 disabled \cf9 \strokec9 =\cf5 \strokec5  \cf8 \strokec8 true\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3             \cf8 \strokec8 await\cf5 \strokec5  addDoc\cf9 \strokec9 (\cf5 \strokec5 collection\cf9 \strokec9 (\cf5 \strokec5 db\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 'artifacts'\cf9 \strokec9 ,\cf5 \strokec5  appId\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 'users'\cf9 \strokec9 ,\cf5 \strokec5  currentUser\cf9 \strokec9 .\cf5 \strokec5 uid\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 'transactions'\cf9 \strokec9 ),\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3                 type\cf9 \strokec9 :\cf5 \strokec5  document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'tType'\cf9 \strokec9 ).\cf5 \strokec5 value\cf9 \strokec9 ,\cf5 \cb1 \strokec5 \
-\cb3                 name\cf9 \strokec9 :\cf5 \strokec5  document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'tName'\cf9 \strokec9 ).\cf5 \strokec5 value\cf9 \strokec9 ,\cf5 \cb1 \strokec5 \
-\cb3                 category\cf9 \strokec9 :\cf5 \strokec5  document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'tCategory'\cf9 \strokec9 ).\cf5 \strokec5 value\cf9 \strokec9 ,\cf5 \cb1 \strokec5 \
-\cb3                 amount\cf9 \strokec9 :\cf5 \strokec5  parseFloat\cf9 \strokec9 (\cf5 \strokec5 document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'tAmount'\cf9 \strokec9 ).\cf5 \strokec5 value\cf9 \strokec9 ),\cf5 \cb1 \strokec5 \
-\cb3                 month\cf9 \strokec9 :\cf5 \strokec5  currentMonth\cf9 \strokec9 ,\cf5 \cb1 \strokec5 \
-\cb3                 timestamp\cf9 \strokec9 :\cf5 \strokec5  \cf12 \strokec12 Date\cf9 \strokec9 .\cf5 \strokec5 now\cf9 \strokec9 ()\cf5 \cb1 \strokec5 \
-\cb3             \cf9 \strokec9 \});\cf5 \cb1 \strokec5 \
-\cb3             btn\cf9 \strokec9 .\cf5 \strokec5 disabled \cf9 \strokec9 =\cf5 \strokec5  \cf8 \strokec8 false\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3             e\cf9 \strokec9 .\cf5 \strokec5 target\cf9 \strokec9 .\cf5 \strokec5 reset\cf9 \strokec9 ();\cf5 \cb1 \strokec5 \
-\cb3             window\cf9 \strokec9 .\cf5 \strokec5 closeModal\cf9 \strokec9 (\cf10 \strokec10 'transactionModal'\cf9 \strokec9 );\cf5 \cb1 \strokec5 \
-\cb3         \cf9 \strokec9 \};\cf5 \cb1 \strokec5 \
-\
-\cb3         document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'fixedForm'\cf9 \strokec9 ).\cf5 \strokec5 onsubmit \cf9 \strokec9 =\cf5 \strokec5  \cf8 \strokec8 async\cf5 \strokec5  \cf9 \strokec9 (\cf5 \strokec5 e\cf9 \strokec9 )\cf5 \strokec5  \cf9 \strokec9 =>\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3             e\cf9 \strokec9 .\cf5 \strokec5 preventDefault\cf9 \strokec9 ();\cf5 \cb1 \strokec5 \
-\cb3             \cf8 \strokec8 if\cf5 \strokec5  \cf9 \strokec9 (!\cf5 \strokec5 currentUser\cf9 \strokec9 )\cf5 \strokec5  \cf8 \strokec8 return\cf9 \strokec9 ;\cf5 \cb1 \strokec5 \
-\cb3             \cf8 \strokec8 await\cf5 \strokec5  addDoc\cf9 \strokec9 (\cf5 \strokec5 collection\cf9 \strokec9 (\cf5 \strokec5 db\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 'artifacts'\cf9 \strokec9 ,\cf5 \strokec5  appId\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 'users'\cf9 \strokec9 ,\cf5 \strokec5  currentUser\cf9 \strokec9 .\cf5 \strokec5 uid\cf9 \strokec9 ,\cf5 \strokec5  \cf10 \strokec10 'fixedExpenses'\cf9 \strokec9 ),\cf5 \strokec5  \cf9 \strokec9 \{\cf5 \cb1 \strokec5 \
-\cb3                 name\cf9 \strokec9 :\cf5 \strokec5  document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'fName'\cf9 \strokec9 ).\cf5 \strokec5 value\cf9 \strokec9 ,\cf5 \cb1 \strokec5 \
-\cb3                 amount\cf9 \strokec9 :\cf5 \strokec5  parseFloat\cf9 \strokec9 (\cf5 \strokec5 document\cf9 \strokec9 .\cf5 \strokec5 getElementById\cf9 \strokec9 (\cf10 \strokec10 'fAmount'\cf9 \strokec9 ).\cf5 \strokec5 value\cf9 \strokec9 )\cf5 \cb1 \strokec5 \
-\cb3             \cf9 \strokec9 \});\cf5 \cb1 \strokec5 \
-\cb3             e\cf9 \strokec9 .\cf5 \strokec5 target\cf9 \strokec9 .\cf5 \strokec5 reset\cf9 \strokec9 ();\cf5 \cb1 \strokec5 \
-\cb3         \cf9 \strokec9 \};\cf5 \cb1 \strokec5 \
-\
-\cb3         initAuth\cf9 \strokec9 ();\cf5 \cb1 \strokec5 \
-\cb3     \cf6 \strokec6 </\cf2 \strokec2 script\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\pard\pardeftab720\partightenfactor0
-\cf6 \cb3 \strokec6 </\cf2 \strokec2 body\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-\cf6 \cb3 \strokec6 </\cf2 \strokec2 html\cf6 \strokec6 >\cf5 \cb1 \strokec5 \
-}
+    <!-- Login -->
+    <div id="authContainer" class="hidden fixed inset-0 bg-slate-100 z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-xl max-w-sm w-full border border-slate-200 text-center">
+            <h2 class="text-2xl font-bold mb-6 text-slate-800">Mis Finanzas Cloud</h2>
+            <form id="authForm" class="space-y-4">
+                <input type="email" id="authEmail" placeholder="Correo" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required>
+                <input type="password" id="authPassword" placeholder="Contraseña" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required>
+                <button type="submit" id="authBtn" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors">Entrar</button>
+            </form>
+            <p id="authError" class="text-red-500 text-xs mt-4 hidden font-medium bg-red-50 p-2 rounded border border-red-100"></p>
+        </div>
+    </div>
+
+    <!-- App Content -->
+    <div id="appContent" class="hidden min-h-screen">
+        <header class="bg-white border-b sticky top-0 z-30 px-4 py-3 shadow-sm">
+            <div class="max-w-[1600px] mx-auto flex flex-wrap justify-between items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <select id="monthSelector" class="text-lg font-bold text-blue-700 bg-transparent border-none focus:ring-0 cursor-pointer p-0">
+                        <option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option>
+                        <option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option>
+                        <option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+                    </select>
+                    <select id="yearSelector" class="text-lg font-bold text-slate-400 bg-transparent border-none focus:ring-0 cursor-pointer p-0">
+                        <option>2024</option><option>2025</option><option>2026</option>
+                    </select>
+                    <div class="h-6 w-[1px] bg-slate-200 mx-2"></div>
+                    <div class="hidden sm:flex gap-4 text-xs font-medium uppercase tracking-wider text-slate-500">
+                        <div><span class="opacity-50">Ingreso:</span> <span id="topTotal" class="text-slate-800">$-</span></div>
+                        <div><span class="opacity-50">Saldo Final:</span> <span id="topRestante" class="text-blue-600">$-</span></div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="btnOpenCards" class="text-[10px] font-black text-slate-400 hover:text-orange-600 uppercase tracking-tighter">💳 TARJETAS</button>
+                    <button id="btnOpenTemplate" class="text-[10px] font-black text-slate-400 hover:text-blue-600 uppercase tracking-tighter">⚙️ ADM. PLANTILLA</button>
+                    <button id="btnOpenTransaction" class="bg-blue-600 text-white px-4 py-1.5 rounded-md text-xs font-bold shadow-sm hover:bg-blue-700">+ NUEVO</button>
+                    <button id="btnLogout" class="ml-2 text-slate-300 hover:text-red-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-[1600px] mx-auto p-4 lg:p-6">
+            <!-- KPIs -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white p-4 rounded-xl border border-slate-200">
+                    <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Ingresos</p>
+                    <p id="kpiIngresos" class="text-xl font-black text-green-600">$0</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200">
+                    <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Pagado</p>
+                    <p id="kpiPagado" class="text-xl font-black text-slate-800">$0</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200">
+                    <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Pendiente</p>
+                    <p id="kpiPendiente" class="text-xl font-black text-orange-500">$0</p>
+                </div>
+                <div id="kpiRestanteBox" class="p-4 rounded-xl border shadow-sm">
+                    <p class="text-[10px] uppercase font-bold opacity-60 mb-1">Saldo Final</p>
+                    <p id="kpiRestante" class="text-xl font-black">$0</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-8 space-y-6">
+                    <div class="table-container">
+                        <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                            <h3 class="text-[11px] font-bold uppercase tracking-widest">Gastos del Mes</h3>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] bg-slate-900 px-2 py-0.5 rounded font-mono" id="tableDateDisplay">---</span>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase border-b">
+                                        <th class="px-4 py-3">Concepto</th>
+                                        <th class="px-4 py-3">Categoría</th>
+                                        <th class="px-4 py-3 text-right">Monto</th>
+                                        <th class="px-4 py-3 text-center">Estado</th>
+                                        <th class="px-4 py-3 text-right">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="monthlyList"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="table-container border-t-4 border-t-green-500">
+                        <div class="bg-white px-4 py-2 border-b flex justify-between items-center">
+                            <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Ingresos y Variables</h3>
+                        </div>
+                        <div class="max-h-60 overflow-y-auto">
+                            <table class="w-full text-left text-sm">
+                                <tbody id="extraList"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-4 space-y-6">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h3 class="text-[10px] font-bold text-slate-400 uppercase mb-4 tracking-widest text-center">Distribución Mes</h3>
+                        <div class="relative h-64"><canvas id="expenseChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h3 class="text-[10px] font-bold text-slate-400 uppercase mb-4 tracking-widest text-center">Tendencia Anual</h3>
+                        <div class="h-48"><canvas id="trendChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODALES -->
+    
+    <div id="cardsModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-4 bg-orange-600 text-white font-bold flex justify-between text-xs uppercase tracking-widest">
+                <span>Gestión de Tarjetas de Crédito</span>
+                <button onclick="window.closeModal('cardsModal')">✕</button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto space-y-6">
+                <form id="cardCreateForm" class="flex gap-2">
+                    <input type="text" id="newCardName" placeholder="Nombre de Tarjeta (ej. Visa Azul)" class="flex-1 text-sm border p-2 rounded" required>
+                    <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded text-xs font-bold uppercase">Crear</button>
+                </form>
+
+                <div id="cardSelectorContainer" class="flex flex-wrap gap-2 py-2 border-b"></div>
+
+                <div id="cardDetailSection" class="hidden space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                            <p class="text-[9px] uppercase font-bold text-slate-400">Deuda Total</p>
+                            <p id="cardTotalDebt" class="text-lg font-black text-slate-800">$0</p>
+                        </div>
+                        <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                            <p class="text-[9px] uppercase font-bold text-blue-400">Este Mes (<span class="currentMonthName"></span>)</p>
+                            <p id="cardMonthDebt" class="text-lg font-black text-blue-600">$0</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <p class="text-[10px] font-bold text-slate-500 uppercase mb-1 tracking-wider">Nueva Compra</p>
+                        <p class="text-[9px] text-slate-400 mb-3 italic">* Se reflejará a partir del mes siguiente.</p>
+                        <form id="cardPurchaseForm" class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                            <input type="text" id="cpName" placeholder="Concepto" class="sm:col-span-5 text-sm border p-2 rounded" required>
+                            <input type="number" id="cpAmount" placeholder="Monto Total" class="sm:col-span-3 text-sm border p-2 rounded" required>
+                            <input type="number" id="cpInstallments" placeholder="Cuotas" value="1" min="1" class="sm:col-span-2 text-sm border p-2 rounded" required>
+                            <button type="submit" class="sm:col-span-2 bg-blue-600 text-white rounded font-bold text-xs uppercase">Añadir</button>
+                        </form>
+                    </div>
+
+                    <div class="table-container max-h-64 overflow-y-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="sticky top-0 bg-slate-100">
+                                <tr>
+                                    <th class="px-3 py-2">Concepto</th>
+                                    <th class="px-3 py-2 text-right">Total</th>
+                                    <th class="px-3 py-2 text-center">Cuotas</th>
+                                    <th class="px-3 py-2 text-right">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cardPurchasesList"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="noCardSelected" class="py-12 text-center text-slate-400 text-sm italic">
+                    Selecciona una tarjeta para ver detalles o crea una nueva.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="fixedSettingsModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl w-full max-w-xl overflow-hidden shadow-2xl">
+            <div class="p-4 bg-slate-800 text-white font-bold flex justify-between text-xs uppercase tracking-widest">
+                <span>Administrar Plantilla de Gastos Fijos</span>
+                <button onclick="window.closeModal('fixedSettingsModal')">✕</button>
+            </div>
+            <div class="p-6">
+                <form id="templateForm" class="grid grid-cols-1 sm:grid-cols-12 gap-2 mb-8 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <input type="text" id="fsName" placeholder="Concepto Fijo" class="sm:col-span-5 text-sm border p-2 rounded" required>
+                    <input type="number" id="fsAmount" placeholder="Monto" class="sm:col-span-3 text-sm border p-2 rounded" required>
+                    <select id="fsCategory" class="sm:col-span-3 text-xs border p-2 rounded bg-white">
+                        <option>Servicios</option><option>Créditos</option><option>Hogar</option>
+                        <option>Transporte</option><option>Entretenimiento</option><option>Alimentos</option>
+                        <option>Otros</option>
+                    </select>
+                    <button type="submit" class="sm:col-span-1 bg-blue-600 text-white rounded font-bold text-xs uppercase flex items-center justify-center">💾</button>
+                </form>
+                <div id="templateList" class="max-h-[350px] overflow-y-auto space-y-1 border rounded-lg overflow-hidden bg-slate-50"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="transactionModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div class="p-4 border-b font-bold flex justify-between text-xs uppercase bg-slate-50">
+                <span>Registrar Movimiento</span>
+                <button onclick="window.closeModal('transactionModal')">✕</button>
+            </div>
+            <form id="transactionForm" class="p-6 space-y-4">
+                <select id="tType" class="w-full text-sm border p-2 rounded">
+                    <option value="income">Ingreso (+)</option>
+                    <option value="expense">Gasto Variable (-)</option>
+                </select>
+                <input type="text" id="tName" placeholder="Concepto" class="w-full text-sm border p-2 rounded" required>
+                <input type="number" id="tAmount" placeholder="Monto $" class="w-full text-sm border p-2 rounded" required>
+                <select id="tCategory" class="w-full text-sm border p-2 rounded">
+                    <option>Servicios</option><option>Créditos</option><option>Hogar</option>
+                    <option>Transporte</option><option>Entretenimiento</option><option>Alimentos</option>
+                    <option>Ingresos</option><option>Otros</option>
+                </select>
+                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold uppercase text-xs">Guardar</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, onSnapshot, addDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAk5syowwLlOJ3DzYGfgsfNt4HtN3QmRXw",
+            authDomain: "finanzas-11581.firebaseapp.com",
+            projectId: "finanzas-11581",
+            storageBucket: "finanzas-11581.firebasestorage.app",
+            messagingSenderId: "464717465231",
+            appId: "1:464717465231:web:3db7c702b2620f3f2e92fa"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appIdGlobal = 'f-v1';
+
+        let user = null;
+        const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        let currentMonth = new Date().toLocaleString('es-ES', { month: 'long' });
+        currentMonth = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
+        let currentYear = new Date().getFullYear().toString();
+        
+        let state = { template: [], monthly: [], extras: [], cards: [], cardPurchases: [] };
+        let selectedCardId = null;
+        let expenseChart = null, trendChart = null;
+
+        window.openModal = (id) => document.getElementById(id)?.classList.remove('hidden');
+        window.closeModal = (id) => document.getElementById(id)?.classList.add('hidden');
+
+        onAuthStateChanged(auth, u => {
+            user = u;
+            if (u) {
+                initApp();
+                document.getElementById('authContainer').classList.add('hidden');
+                document.getElementById('appContent').classList.remove('hidden');
+            } else {
+                document.getElementById('authContainer').classList.remove('hidden');
+                document.getElementById('appContent').classList.add('hidden');
+            }
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        });
+
+        const getCollRef = (name) => collection(db, 'artifacts', appIdGlobal, 'users', user.uid, name);
+        const getDocRef = (name, id) => doc(db, 'artifacts', appIdGlobal, 'users', user.uid, name, id);
+
+        function initApp() {
+            document.getElementById('monthSelector').value = currentMonth;
+            document.getElementById('yearSelector').value = currentYear;
+
+            onSnapshot(getCollRef('template'), snap => { state.template = snap.docs.map(d => ({id: d.id, ...d.data()})); renderTemplateList(); });
+            onSnapshot(getCollRef('monthly'), snap => { state.monthly = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
+            onSnapshot(getCollRef('extras'), snap => { state.extras = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
+            onSnapshot(getCollRef('cards'), snap => { state.cards = snap.docs.map(d => ({id: d.id, ...d.data()})); renderCardSelector(); });
+            onSnapshot(getCollRef('cardPurchases'), snap => { state.cardPurchases = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); renderCardDetail(); });
+
+            document.getElementById('monthSelector').onchange = (e) => { currentMonth = e.target.value; refreshUI(); renderCardDetail(); };
+            document.getElementById('yearSelector').onchange = (e) => { currentYear = e.target.value; refreshUI(); renderCardDetail(); };
+            document.getElementById('btnOpenTemplate').onclick = () => window.openModal('fixedSettingsModal');
+            document.getElementById('btnOpenTransaction').onclick = () => window.openModal('transactionModal');
+            document.getElementById('btnOpenCards').onclick = () => window.openModal('cardsModal');
+            document.getElementById('btnLogout').onclick = () => signOut(auth);
+
+            document.getElementById('cardCreateForm').onsubmit = async (e) => {
+                e.preventDefault();
+                await addDoc(getCollRef('cards'), { name: e.target.newCardName.value, active: true });
+                e.target.reset();
+            };
+
+            document.getElementById('cardPurchaseForm').onsubmit = async (e) => {
+                e.preventDefault();
+                if(!selectedCardId) return;
+                await addDoc(getCollRef('cardPurchases'), {
+                    cardId: selectedCardId,
+                    name: e.target.cpName.value,
+                    totalAmount: parseFloat(e.target.cpAmount.value),
+                    installments: parseInt(e.target.cpInstallments.value),
+                    startMonth: currentMonth,
+                    startYear: currentYear,
+                    active: true,
+                    timestamp: Date.now()
+                });
+                e.target.reset();
+            };
+            
+            document.getElementById('templateForm').onsubmit = async (e) => {
+                e.preventDefault();
+                await addDoc(getCollRef('template'), { 
+                    name: e.target.fsName.value, amount: parseFloat(e.target.fsAmount.value), 
+                    category: e.target.fsCategory.value, active: true, timestamp: Date.now()
+                });
+                e.target.reset();
+            };
+
+            document.getElementById('transactionForm').onsubmit = async (e) => {
+                e.preventDefault();
+                await addDoc(getCollRef('extras'), {
+                    type: e.target.tType.value, name: e.target.tName.value, amount: parseFloat(e.target.tAmount.value),
+                    category: e.target.tCategory.value, month: currentMonth, year: currentYear, 
+                    active: true, timestamp: Date.now()
+                });
+                window.closeModal('transactionModal'); e.target.reset();
+            };
+        }
+
+        window.selectCard = (id) => {
+            selectedCardId = id;
+            renderCardSelector();
+            renderCardDetail();
+        };
+
+        function renderCardSelector() {
+            const container = document.getElementById('cardSelectorContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            state.cards.filter(c => c.active !== false).forEach(c => {
+                const isActive = selectedCardId === c.id;
+                container.innerHTML += `<span onclick="window.selectCard('${c.id}')" class="card-pill ${isActive ? 'active' : 'inactive'}">${c.name}</span>`;
+            });
+        }
+
+        function renderCardDetail() {
+            const detail = document.getElementById('cardDetailSection');
+            const empty = document.getElementById('noCardSelected');
+            const list = document.getElementById('cardPurchasesList');
+            document.querySelectorAll('.currentMonthName').forEach(el => el.innerText = currentMonth);
+
+            if (!selectedCardId) { if(detail) detail.classList.add('hidden'); if(empty) empty.classList.remove('hidden'); return; }
+            if(detail) detail.classList.remove('hidden'); 
+            if(empty) empty.classList.add('hidden');
+            if(list) list.innerHTML = '';
+
+            let totalDebt = 0;
+            let monthDebt = 0;
+
+            state.cardPurchases.filter(p => p.active !== false && p.cardId === selectedCardId).forEach(p => {
+                const installmentAmount = p.totalAmount / p.installments;
+                totalDebt += p.totalAmount;
+                
+                if (doesInstallmentApply(p, currentMonth, currentYear)) {
+                    monthDebt += installmentAmount;
+                }
+
+                if(list) list.innerHTML += `<tr class="compact-row"><td class="px-3 py-2 font-medium">${p.name}</td><td class="px-3 py-2 text-right font-bold">$${p.totalAmount.toLocaleString()}</td><td class="px-3 py-2 text-center text-slate-400">${p.installments}</td><td class="px-3 py-2 text-right"><button onclick="window.hideDocById('cardPurchases', '${p.id}')" class="text-red-300 hover:text-red-500">🗑️</button></td></tr>`;
+            });
+
+            const totalDebtEl = document.getElementById('cardTotalDebt');
+            const monthDebtEl = document.getElementById('cardMonthDebt');
+            if(totalDebtEl) totalDebtEl.innerText = `$${totalDebt.toLocaleString()}`;
+            if(monthDebtEl) monthDebtEl.innerText = `$${monthDebt.toLocaleString()}`;
+        }
+
+        function doesInstallmentApply(purchase, targetMonth, targetYear) {
+            const startIdx = monthNames.indexOf(purchase.startMonth);
+            const startYear = parseInt(purchase.startYear);
+            const targetIdx = monthNames.indexOf(targetMonth);
+            const targetYearInt = parseInt(targetYear);
+            const totalMonthsElapsed = (targetYearInt - startYear) * 12 + (targetIdx - startIdx);
+            return totalMonthsElapsed >= 1 && totalMonthsElapsed <= purchase.installments;
+        }
+
+        function refreshUI() {
+            const list = document.getElementById('monthlyList');
+            const extraList = document.getElementById('extraList');
+            if (!list) return;
+            
+            list.innerHTML = ''; extraList.innerHTML = '';
+            let incomesTotal = 0, paidTotal = 0, pendingTotal = 0;
+            let catTotals = {}; let yearStats = {};
+
+            state.cardPurchases.filter(p => p.active !== false).forEach(p => {
+                if (doesInstallmentApply(p, currentMonth, currentYear)) {
+                    const amount = p.totalAmount / p.installments;
+                    pendingTotal += amount;
+                    const cardName = state.cards.find(c => c.id === p.cardId)?.name || 'Tarjeta';
+                    list.innerHTML += `<tr class="compact-row bg-orange-50/30"><td class="px-4 py-3 font-semibold text-slate-700 italic">Pago ${cardName} - ${p.name}</td><td class="px-4 py-3 text-orange-400 text-[10px] uppercase font-bold">Créditos</td><td class="px-4 py-3 text-right font-black text-slate-800">$${amount.toLocaleString()}</td><td class="px-4 py-3 text-center"><span class="status-badge bg-orange-100 text-orange-700">Tarjeta</span></td><td class="px-4 py-3 text-right">---</td></tr>`;
+                }
+            });
+
+            state.monthly.filter(m => m.active !== false).forEach(m => {
+                if (m.year === currentYear) {
+                    if (!yearStats[m.month]) yearStats[m.month] = { inc: 0, exp: 0 };
+                    if (m.status === 'paid') yearStats[m.month].exp += m.amount;
+                }
+                if (m.month === currentMonth && m.year === currentYear) {
+                    if (m.status === 'paid') { paidTotal += m.amount; catTotals[m.category] = (catTotals[m.category] || 0) + m.amount; } 
+                    else { pendingTotal += m.amount; }
+                    list.innerHTML += `<tr class="compact-row"><td class="px-4 py-3 font-semibold text-slate-700">${m.name}</td><td class="px-4 py-3 text-slate-400 text-[10px] uppercase font-bold">${m.category}</td><td class="px-4 py-3 text-right font-black text-slate-800">$${m.amount.toLocaleString()}</td><td class="px-4 py-3 text-center"><span class="status-badge ${m.status==='paid'?'bg-green-100 text-green-700':'bg-orange-100 text-orange-700'}">${m.status==='paid'?'Pagado':'Falta'}</span></td><td class="px-4 py-3 text-right flex justify-end gap-1"><button onclick="window.updateItemStatus('monthly', '${m.id}', '${m.status==='paid'?'pending':'paid'}')" class="btn-action ${m.status==='paid'?'text-slate-400':'text-blue-500'} font-bold">${m.status==='paid' ? '↩' : '✓'}</button><button onclick="window.hideDocById('monthly', '${m.id}')" class="btn-action text-red-300 hover:text-red-500">🗑️</button></td></tr>`;
+                }
+            });
+
+            state.extras.filter(e => e.active !== false).forEach(e => {
+                if (e.year === currentYear) {
+                    if (!yearStats[e.month]) yearStats[e.month] = { inc: 0, exp: 0 };
+                    if (e.type === 'income') yearStats[e.month].inc += e.amount;
+                    else yearStats[e.month].exp += e.amount;
+                }
+                if (e.month === currentMonth && e.year === currentYear) {
+                    if (e.type === 'income') incomesTotal += e.amount;
+                    else { paidTotal += e.amount; catTotals[e.category] = (catTotals[e.category] || 0) + e.amount; }
+                    extraList.innerHTML += `<tr class="compact-row ${e.type === 'income' ? 'bg-green-50/40' : ''}"><td class="px-4 py-2.5 font-medium text-slate-700">${e.name}</td><td class="px-4 py-2.5 text-right font-bold ${e.type==='income'?'text-green-600':'text-slate-800'}">${e.type==='income'?'+':'-'}$${e.amount.toLocaleString()}</td><td class="px-4 py-2.5 text-right"><button onclick="window.hideDocById('extras', '${e.id}')" class="text-slate-300 hover:text-red-500 font-bold px-2">✕</button></td></tr>`;
+                }
+            });
+
+            const finalEstimado = incomesTotal - paidTotal - pendingTotal;
+            document.getElementById('kpiIngresos').innerText = `$${incomesTotal.toLocaleString()}`;
+            document.getElementById('kpiPagado').innerText = `$${paidTotal.toLocaleString()}`;
+            document.getElementById('kpiPendiente').innerText = `$${pendingTotal.toLocaleString()}`;
+            document.getElementById('kpiRestante').innerText = `$${finalEstimado.toLocaleString()}`;
+            document.getElementById('topTotal').innerText = `$${incomesTotal.toLocaleString()}`;
+            document.getElementById('topRestante').innerText = `$${finalEstimado.toLocaleString()}`;
+            document.getElementById('tableDateDisplay').innerText = `${currentMonth} ${currentYear}`;
+            document.getElementById('kpiRestanteBox').className = `p-4 rounded-xl border shadow-sm ${finalEstimado < 0 ? 'bg-red-50 border-red-100 text-red-600' : 'bg-green-50 border-green-100 text-green-600'}`;
+            
+            renderCharts(catTotals, yearStats);
+        }
+
+        window.hideDocById = async (collName, docId) => {
+            if (!user) return;
+            try { await updateDoc(getDocRef(collName, docId), { active: false }); } catch (e) { console.error(e); }
+        };
+
+        window.updateItemStatus = async (coll, id, newStatus) => {
+            if (!user) return;
+            try { await updateDoc(getDocRef(coll, id), { status: newStatus }); } catch (e) { console.error(e); }
+        };
+
+        window.addSingleFromTemplate = async (templateId) => {
+            if (!user) return;
+            const t = state.template.find(i => i.id === templateId);
+            if (!t) return;
+            try {
+                await addDoc(getCollRef('monthly'), {
+                    name: t.name, amount: t.amount, category: t.category || 'Servicios',
+                    month: currentMonth, year: currentYear, status: 'pending', 
+                    active: true, timestamp: Date.now()
+                });
+            } catch (e) { console.error(e); }
+        };
+
+        function renderTemplateList() {
+            const list = document.getElementById('templateList');
+            if (!list) return;
+            list.innerHTML = '';
+            state.template.filter(t => t.active !== false).forEach(t => {
+                list.innerHTML += `<div class="group flex items-center bg-white border-b border-slate-100 p-2 hover:bg-slate-50 transition-colors"><button onclick="window.addSingleFromTemplate('${t.id}')" class="p-1.5 mr-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-600 hover:text-white transition-colors"><b>+</b></button><div class="flex-1 text-xs font-bold text-slate-700 px-2">${t.name} <span class="text-[9px] text-slate-400 block font-normal uppercase">${t.category || 'Otros'}</span></div><div class="font-black text-blue-600 text-xs">$${t.amount.toLocaleString()}</div><button onclick="window.hideDocById('template', '${t.id}')" class="ml-4 p-2 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">🗑️</button></div>`;
+            });
+        }
+
+        function renderCharts(catTotals, yearStats) {
+            const ctxE = document.getElementById('expenseChart');
+            if (ctxE) {
+                if (expenseChart) expenseChart.destroy();
+                const keys = Object.keys(catTotals);
+                if (keys.length > 0) {
+                    expenseChart = new Chart(ctxE, {
+                        type: 'doughnut',
+                        data: { labels: keys, datasets: [{ data: Object.values(catTotals), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6366f1', '#8b5cf6', '#ec4899', '#64748b'], borderWidth: 0 }] },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 6, font: { size: 9 } } } }, cutout: '80%' }
+                    });
+                }
+            }
+
+            const ctxT = document.getElementById('trendChart');
+            if (ctxT) {
+                if (trendChart) trendChart.destroy();
+                trendChart = new Chart(ctxT, {
+                    type: 'bar',
+                    data: {
+                        labels: monthNames.map(m => m.substring(0,3)),
+                        datasets: [
+                            { label: 'Ingresos', data: monthNames.map(m => yearStats[m]?.inc || 0), backgroundColor: '#10b981', borderRadius: 4 },
+                            { label: 'Gastos', data: monthNames.map(m => yearStats[m]?.exp || 0), backgroundColor: '#cbd5e1', borderRadius: 4 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { font: { size: 9 } } } }, plugins: { legend: { display: false } } }
+                });
+            }
+        }
+
+        document.getElementById('authForm').onsubmit = async (e) => {
+            e.preventDefault();
+            try {
+                document.getElementById('loadingOverlay').classList.remove('hidden');
+                await signInWithEmailAndPassword(auth, e.target.authEmail.value, e.target.authPassword.value);
+            } catch (err) {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                document.getElementById('authError').innerText = "Acceso denegado.";
+                document.getElementById('authError').classList.remove('hidden');
+            }
+        };
+    </script>
+</body>
+</html>
