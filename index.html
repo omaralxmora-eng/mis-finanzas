@@ -253,7 +253,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, collection, onSnapshot, addDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, collection, onSnapshot, addDoc, deleteDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAk5syowwLlOJ3DzYGfgsfNt4HtN3QmRXw",
@@ -275,7 +275,7 @@
         currentMonth = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
         let currentYear = new Date().getFullYear().toString();
         
-        let state = { template: [], monthly: [], extras: [], cards: [], cardPurchases: [] };
+        let state = { template: [], monthly: [], extras: [], cards: [], cardPurchases: [], cardPayments: [] };
         let selectedCardId = null;
         let expenseChart = null, trendChart = null;
 
@@ -307,6 +307,7 @@
             onSnapshot(getCollRef('extras'), snap => { state.extras = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
             onSnapshot(getCollRef('cards'), snap => { state.cards = snap.docs.map(d => ({id: d.id, ...d.data()})); renderCardSelector(); });
             onSnapshot(getCollRef('cardPurchases'), snap => { state.cardPurchases = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); renderCardDetail(); });
+            onSnapshot(getCollRef('cardPayments'), snap => { state.cardPayments = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); renderCardDetail(); });
 
             document.getElementById('monthSelector').onchange = (e) => { currentMonth = e.target.value; refreshUI(); renderCardDetail(); };
             document.getElementById('yearSelector').onchange = (e) => { currentYear = e.target.value; refreshUI(); renderCardDetail(); };
@@ -413,6 +414,23 @@
             return totalMonthsElapsed >= 1 && totalMonthsElapsed <= purchase.installments;
         }
 
+        window.toggleCardPayment = async (purchaseId) => {
+            if(!user) return;
+            // Identificador único para este pago: compraId_mes_año
+            const paymentId = `${purchaseId}_${currentMonth}_${currentYear}`;
+            const existing = state.cardPayments.find(p => p.id === paymentId);
+            
+            if (existing) {
+                // Si existe, lo borramos (volvemos a pendiente)
+                await deleteDoc(getDocRef('cardPayments', paymentId));
+            } else {
+                // Si no existe, lo creamos como pagado
+                await setDoc(getDocRef('cardPayments', paymentId), {
+                    purchaseId, month: currentMonth, year: currentYear, status: 'paid'
+                });
+            }
+        };
+
         function refreshUI() {
             const list = document.getElementById('monthlyList');
             const extraList = document.getElementById('extraList');
@@ -422,15 +440,42 @@
             let incomesTotal = 0, paidTotal = 0, pendingTotal = 0;
             let catTotals = {}; let yearStats = {};
 
+            // Procesar compras con tarjeta
             state.cardPurchases.filter(p => p.active !== false).forEach(p => {
                 if (doesInstallmentApply(p, currentMonth, currentYear)) {
                     const amount = p.totalAmount / p.installments;
-                    pendingTotal += amount;
+                    const paymentId = `${p.id}_${currentMonth}_${currentYear}`;
+                    const isPaid = state.cardPayments.some(pay => pay.id === paymentId);
+                    
+                    if (isPaid) {
+                        paidTotal += amount;
+                        catTotals['Créditos'] = (catTotals['Créditos'] || 0) + amount;
+                    } else {
+                        pendingTotal += amount;
+                    }
+
                     const cardName = state.cards.find(c => c.id === p.cardId)?.name || 'Tarjeta';
-                    list.innerHTML += `<tr class="compact-row bg-orange-50/30"><td class="px-4 py-3 font-semibold text-slate-700 italic">Pago ${cardName} - ${p.name}</td><td class="px-4 py-3 text-orange-400 text-[10px] uppercase font-bold">Créditos</td><td class="px-4 py-3 text-right font-black text-slate-800">$${amount.toLocaleString()}</td><td class="px-4 py-3 text-center"><span class="status-badge bg-orange-100 text-orange-700">Tarjeta</span></td><td class="px-4 py-3 text-right">---</td></tr>`;
+                    list.innerHTML += `
+                        <tr class="compact-row ${isPaid ? 'bg-green-50/20' : 'bg-orange-50/30'}">
+                            <td class="px-4 py-3 font-semibold text-slate-700 italic">Pago ${cardName} - ${p.name}</td>
+                            <td class="px-4 py-3 text-orange-400 text-[10px] uppercase font-bold">Créditos</td>
+                            <td class="px-4 py-3 text-right font-black text-slate-800">$${amount.toLocaleString()}</td>
+                            <td class="px-4 py-3 text-center">
+                                <span class="status-badge ${isPaid ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">
+                                    ${isPaid ? 'Pagado' : 'Tarjeta'}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-right flex justify-end gap-1">
+                                <button onclick="window.toggleCardPayment('${p.id}')" class="btn-action ${isPaid ? 'text-slate-400' : 'text-blue-500'} font-bold">
+                                    ${isPaid ? '↩' : '✓'}
+                                </button>
+                                <span class="w-8"></span> <!-- Espaciador para alinear con basura -->
+                            </td>
+                        </tr>`;
                 }
             });
 
+            // Procesar gastos fijos mensuales
             state.monthly.filter(m => m.active !== false).forEach(m => {
                 if (m.year === currentYear) {
                     if (!yearStats[m.month]) yearStats[m.month] = { inc: 0, exp: 0 };
@@ -443,6 +488,7 @@
                 }
             });
 
+            // Procesar ingresos y extras
             state.extras.filter(e => e.active !== false).forEach(e => {
                 if (e.year === currentYear) {
                     if (!yearStats[e.month]) yearStats[e.month] = { inc: 0, exp: 0 };
