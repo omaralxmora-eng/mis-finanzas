@@ -255,6 +255,7 @@
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, collection, onSnapshot, addDoc, deleteDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // CONFIGURACIÓN ORIGINAL DE FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyAk5syowwLlOJ3DzYGfgsfNt4HtN3QmRXw",
             authDomain: "finanzas-11581.firebaseapp.com",
@@ -268,7 +269,10 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         const appIdGlobal = 'f-v1';
-        const apiKeyGemini = "AIzaSyCpJzDDi49GvmygfGvDwFBxRaPYnFynpP4";
+        
+        // API KEY DE GEMINI (Actualizada o corregida según sea necesario)
+        const apiKeyGemini = ""; 
+        const GEMINI_MODEL = "gemini-2.5-flash-preview-09-2025";
 
         let user = null;
         const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -279,13 +283,13 @@
         let financials = { ingresos: 0, pagado: 0, pendiente: 0, totalGastos: 0 };
         let selectedCardId = null;
         let expenseChart = null;
-
-        // Estado del ordenado
         let sortConfig = { key: 'timestamp', direction: 'desc' };
 
+        // UTILS
         window.openModal = (id) => document.getElementById(id)?.classList.remove('hidden');
         window.closeModal = (id) => document.getElementById(id)?.classList.add('hidden');
 
+        // AUTH LISTENER
         onAuthStateChanged(auth, u => {
             user = u;
             if (u) {
@@ -334,6 +338,7 @@
             document.getElementById('btnLogout').onclick = () => signOut(auth);
         }
 
+        // LÓGICA DE GEMINI CON EXPONENTIAL BACKOFF
         async function askGemini(isChat = false) {
             const btn = document.getElementById('btnAskAI');
             const content = document.getElementById('aiContent');
@@ -352,14 +357,27 @@
                 .map(m => `- ${m.name}: $${m.amount} [${m.status}]`).join("\n");
 
             const contextText = `RESUMEN (${currentMonth} ${currentYear}):\nIngresos: $${financials.ingresos}\nGastos Totales: $${financials.totalGastos}\nPagado: $${financials.pagado}\nPendiente: $${financials.pendiente}\n\nDETALLE:\n${listadoGastos}`;
-            const prompt = isChat ? `${contextText}\n\nUsuario pregunta: "${query}". Responde brevemente en español.` : `${contextText}\n\nAnaliza estos datos y responde ESTRICTAMENTE en este formato JSON: {"eficiencia": 80, "riesgo": "Bajo", "mensaje": "Consejo breve aquí"}`;
-            const modelUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKeyGemini}`;
+            const prompt = isChat 
+                ? `${contextText}\n\nUsuario pregunta: "${query}". Responde brevemente en español.` 
+                : `${contextText}\n\nAnaliza estos datos y responde ESTRICTAMENTE en este formato JSON: {"eficiencia": 80, "riesgo": "Bajo", "mensaje": "Consejo breve aquí"}`;
+            
+            const modelUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKeyGemini}`;
 
-            const callAPI = async (retryCount = 0) => {
+            const callWithRetry = async (retryCount = 0) => {
                 try {
-                    const res = await fetch(modelUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+                    const res = await fetch(modelUrl, { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) 
+                    });
+
                     if (!res.ok) {
-                        if (res.status === 429 && retryCount < 5) { await new Promise(r => setTimeout(r, Math.pow(2, retryCount) * 1000)); return callAPI(retryCount + 1); }
+                        // Error 429 es el típico de "muchas peticiones"
+                        if (res.status === 429 && retryCount < 5) {
+                            const delay = Math.pow(2, retryCount) * 1000;
+                            await new Promise(r => setTimeout(r, delay));
+                            return callWithRetry(retryCount + 1);
+                        }
                         throw new Error(await res.text());
                     }
                     return await res.json();
@@ -367,11 +385,14 @@
             };
 
             try {
-                const data = await callAPI();
+                const data = await callWithRetry();
                 let textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (!textResponse) throw new Error("Sin respuesta de la IA.");
-                if (isChat) { content.innerHTML = `<div class="not-italic text-blue-800 font-bold">Tú: ${query}</div><div class="not-italic mt-1">${textResponse}</div>`; chatInput.value = ''; }
-                else {
+                
+                if (isChat) { 
+                    content.innerHTML = `<div class="not-italic text-blue-800 font-bold">Tú: ${query}</div><div class="not-italic mt-1">${textResponse}</div>`; 
+                    chatInput.value = ''; 
+                } else {
                     const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
                     if (!jsonMatch) throw new Error("Formato inválido.");
                     const result = JSON.parse(jsonMatch[0]);
@@ -381,12 +402,13 @@
                 statusText.innerText = "Análisis completado";
             } catch (err) {
                 console.error("Gemini Fail:", err);
-                content.innerText = "Error: El servicio de IA no está disponible en este momento.";
+                content.innerText = "Error: El servicio de IA está saturado o no disponible en este momento.";
                 statusDot.className = "h-2 w-2 rounded-full bg-red-500";
                 statusText.innerText = "Error de Conexión";
             } finally { btn.disabled = false; }
         }
 
+        // LÓGICA DE NEGOCIO Y RENDERIZADO
         function doesInstallmentApply(purchase, targetMonth, targetYear) {
             const startIdx = monthNames.indexOf(purchase.startMonth), startYear = parseInt(purchase.startYear);
             const targetIdx = monthNames.indexOf(targetMonth), targetYearInt = parseInt(targetYear);
@@ -419,7 +441,6 @@
             document.getElementById('cardMonthDebt').innerText = `$${monthDebt.toLocaleString()}`;
         }
 
-        // Función para cambiar el orden
         window.setSort = (key) => {
             if (sortConfig.key === key) {
                 sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
@@ -437,7 +458,6 @@
             let catTotals = {};
             let allItems = [];
 
-            // Resetear indicadores visuales de orden
             ['name', 'category', 'amount', 'status'].forEach(k => {
                 const el = document.getElementById(`sort-${k}`);
                 if (el) el.innerText = '';
@@ -445,7 +465,6 @@
             const activeSortEl = document.getElementById(`sort-${sortConfig.key}`);
             if (activeSortEl) activeSortEl.innerText = sortConfig.direction === 'asc' ? ' ↑' : ' ↓';
 
-            // 1. Tarjetas (Cuotas)
             state.cardPurchases.filter(p => p.active !== false).forEach(p => {
                 if (doesInstallmentApply(p, currentMonth, currentYear)) {
                     const amount = p.totalAmount / p.installments;
@@ -458,7 +477,6 @@
                 }
             });
 
-            // 2. Gastos Fijos (Plantilla activada)
             state.monthly.filter(m => m.active !== false && m.month === currentMonth && m.year === currentYear).forEach(m => {
                 allItems.push({ ...m, type: 'fixed', isIncome: false });
                 if (m.status === 'paid') financials.pagado += m.amount; else financials.pendiente += m.amount;
@@ -466,34 +484,26 @@
                 catTotals[m.category] = (catTotals[m.category] || 0) + m.amount;
             });
 
-            // 3. Extras (Ingresos y Gastos Variables)
             state.extras.filter(e => e.active !== false && e.month === currentMonth && e.year === currentYear).forEach(e => {
                 const isIncome = e.type === 'income';
                 allItems.push({ ...e, isIncome, type: 'extra', status: isIncome ? 'income' : 'paid' });
-                if (isIncome) {
-                    financials.ingresos += e.amount;
-                } else {
+                if (isIncome) financials.ingresos += e.amount;
+                else {
                     financials.pagado += e.amount;
                     financials.totalGastos += e.amount;
                     catTotals[e.category] = (catTotals[e.category] || 0) + e.amount;
                 }
             });
 
-            // Lógica de Ordenado
             allItems.sort((a, b) => {
-                let valA = a[sortConfig.key];
-                let valB = b[sortConfig.key];
-                
-                // Normalizar para comparación
+                let valA = a[sortConfig.key], valB = b[sortConfig.key];
                 if (typeof valA === 'string') valA = valA.toLowerCase();
                 if (typeof valB === 'string') valB = valB.toLowerCase();
-
                 if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
                 if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
                 return 0;
             });
 
-            // Renderizar tabla
             allItems.forEach(m => {
                 const isPaid = m.status === 'paid';
                 const isIncome = m.isIncome;
