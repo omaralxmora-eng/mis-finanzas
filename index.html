@@ -292,7 +292,7 @@
         const db = getFirestore(app);
         const appIdGlobal = 'f-v1';
         
-        // API KEY ACTUALIZADA POR EL USUARIO
+        // API KEY SUMINISTRADA POR EL USUARIO
         const apiKeyGemini = "AIzaSyCpJzDDi49GvmygfGvDwFBxRaPYnFynpP4"; 
 
         let user = null;
@@ -369,7 +369,7 @@
             const chatInput = document.getElementById('aiChatInput');
 
             if (!apiKeyGemini) {
-                content.innerText = "Error: Configura la API Key de Gemini en el código.";
+                content.innerText = "Falta API Key.";
                 return;
             }
 
@@ -378,63 +378,42 @@
 
             btn.disabled = true;
             statusDot.className = "h-2 w-2 rounded-full bg-blue-500 animate-pulse";
-            statusText.innerText = "Consultando IA...";
-            content.innerText = isChat ? "Pensando respuesta..." : "Analizando tus finanzas del mes...";
+            statusText.innerText = "IA Pensando...";
 
-            const listadoGastosFijos = state.monthly
+            const listadoGastos = state.monthly
                 .filter(m => m.active !== false && m.month === currentMonth && m.year === currentYear)
-                .map(m => `- ${m.name}: $${m.amount} [${m.status === 'paid' ? 'Pagado' : 'Pendiente'}]`)
-                .join("\n");
+                .map(m => `- ${m.name}: $${m.amount} [${m.status}]`).join("\n");
 
-            const listadoVariables = state.extras
-                .filter(e => e.active !== false && e.month === currentMonth && e.year === currentYear && e.type === 'expense')
-                .map(e => `- ${e.name} (Variable): $${e.amount} [Pagado]`)
-                .join("\n");
+            const contextText = `RESUMEN (${currentMonth} ${currentYear}):\nIngresos: $${financials.ingresos}\nGastos: $${financials.totalGastos}\nPagado: $${financials.pagado}\nPendiente: $${financials.pendiente}\n\nDETALLE:\n${listadoGastos}`;
 
-            const listadoCuotas = state.cardPurchases
-                .filter(p => p.active !== false && doesInstallmentApply(p, currentMonth, currentYear))
-                .map(p => {
-                    const amount = p.totalAmount / p.installments;
-                    const paymentId = `${p.id}_${currentMonth}_${currentYear}`;
-                    const isPaid = state.cardPayments.some(pay => pay.id === paymentId);
-                    return `- Pago Tarjeta ${p.name}: $${amount.toFixed(2)} [${isPaid ? 'Pagado' : 'Pendiente'}]`;
-                })
-                .join("\n");
-
-            const contextText = `RESUMEN (${currentMonth} ${currentYear}):\n- Ingresos: $${financials.ingresos}\n- Gastos: $${financials.totalGastos}\n- Pagado: $${financials.pagado}\n- Pendiente: $${financials.pendiente}\n\nDETALLE:\n${listadoGastosFijos}\n${listadoVariables}\n${listadoCuotas}`;
-
+            // Prompt optimizado para evitar errores de parseo JSON si falla la respuesta estructurada
             const prompt = isChat 
-                ? `${contextText}\n\nPregunta: "${query}". Responde en español de forma breve y clara.`
-                : `${contextText}\n\nGenera un análisis en JSON: {"eficiencia": (0-100), "riesgo": "Bajo/Medio/Alto", "mensaje": "Resumen corto y 3 consejos rápidos en español"}.`;
+                ? `${contextText}\n\nPregunta: "${query}". Responde en español breve.`
+                : `${contextText}\n\nIMPORTANTE: Responde ÚNICAMENTE en formato JSON plano: {"eficiencia": 80, "riesgo": "Bajo", "mensaje": "Tu mensaje aquí"}.`;
 
-            // USANDO EL MODELO ESTABLE 1.5 FLASH
             const modelUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKeyGemini}`;
 
-            const callGemini = async (retryCount = 0) => {
-                try {
-                    const res = await fetch(modelUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: prompt }] }],
-                            ...(isChat ? {} : { generationConfig: { responseMimeType: "application/json" } })
-                        })
-                    });
-                    if (!res.ok) throw new Error(`Status ${res.status}`);
-                    return await res.json();
-                } catch (e) {
-                    if (retryCount < 3) {
-                        await new Promise(r => setTimeout(r, 1500 * (retryCount + 1)));
-                        return callGemini(retryCount + 1);
-                    }
-                    throw e;
-                }
-            };
-
             try {
-                const data = await callGemini();
-                const textResponse = data.candidates[0].content.parts[0].text;
+                const res = await fetch(modelUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    console.error("Gemini Error:", errorData);
+                    throw new Error(errorData.error?.message || "Error en API");
+                }
+
+                const data = await res.json();
+                let textResponse = data.candidates[0].content.parts[0].text;
                 
+                // Limpieza de posibles backticks de markdown que a veces devuelve la IA
+                textResponse = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
+
                 if (isChat) {
                     content.innerHTML = `<div class="not-italic text-blue-800 font-medium mb-1">Tú: ${query}</div><div class="not-italic">${textResponse}</div>`;
                     chatInput.value = '';
@@ -444,14 +423,14 @@
                     document.getElementById('aiMetrics').classList.remove('hidden');
                     document.getElementById('aiEfficiency').innerText = `${result.eficiencia}%`;
                     document.getElementById('aiRisk').innerText = result.riesgo;
-                    document.getElementById('aiRisk').className = `text-sm font-black ${result.riesgo === 'Bajo' ? 'text-green-600' : (result.riesgo === 'Medio' ? 'text-orange-500' : 'text-red-600')}`;
                 }
                 statusDot.className = "h-2 w-2 rounded-full bg-green-500";
-                statusText.innerText = "Análisis actualizado";
+                statusText.innerText = "Análisis completado";
             } catch (err) {
-                content.innerText = "Error: Verifica tu conexión o API Key.";
+                console.error("Error completo:", err);
+                content.innerText = "Error: " + err.message;
                 statusDot.className = "h-2 w-2 rounded-full bg-red-500";
-                statusText.innerText = "Error";
+                statusText.innerText = "Error API";
             } finally {
                 btn.disabled = false;
             }
