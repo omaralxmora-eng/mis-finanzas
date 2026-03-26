@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control Financiero - Ordenable</title>
+    <title>Control Financiero - Proyección Tarjetas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -161,7 +161,7 @@
                 </form>
                 <div id="cardSelectorContainer" class="flex flex-wrap gap-2 py-2 border-b"></div>
                 <div id="cardDetailSection" class="hidden space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
                             <p class="text-[9px] uppercase font-bold text-slate-400">Deuda Total</p>
                             <p id="cardTotalDebt" class="text-lg font-black text-slate-800">$0</p>
@@ -169,6 +169,10 @@
                         <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
                             <p class="text-[9px] uppercase font-bold text-blue-400">Este Mes (<span class="currentMonthName"></span>)</p>
                             <p id="cardMonthDebt" class="text-lg font-black text-blue-600">$0</p>
+                        </div>
+                        <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                            <p class="text-[9px] uppercase font-bold text-indigo-400">Próximo Mes (<span class="nextMonthName"></span>)</p>
+                            <p id="cardNextMonthDebt" class="text-lg font-black text-indigo-600">$0</p>
                         </div>
                     </div>
                     <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
@@ -268,9 +272,7 @@
         currentMonth = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
         let currentYear = new Date().getFullYear().toString();
         
-        // Estado del ordenamiento
         let currentSort = { key: 'timestamp', direction: 'asc' };
-
         let state = { template: [], monthly: [], extras: [], cards: [], cardPurchases: [], cardPayments: [] };
         let selectedCardId = null;
         let expenseChart = null, trendChart = null;
@@ -308,16 +310,11 @@
             document.getElementById('monthSelector').onchange = (e) => { currentMonth = e.target.value; refreshUI(); };
             document.getElementById('yearSelector').onchange = (e) => { currentYear = e.target.value; refreshUI(); };
             
-            // Eventos para ordenamiento
             document.querySelectorAll('th.sortable').forEach(th => {
                 th.addEventListener('click', () => {
                     const key = th.getAttribute('data-sort');
-                    if (currentSort.key === key) {
-                        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-                    } else {
-                        currentSort.key = key;
-                        currentSort.direction = 'asc';
-                    }
+                    if (currentSort.key === key) currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                    else { currentSort.key = key; currentSort.direction = 'asc'; }
                     updateSortHeaders();
                     refreshUI();
                 });
@@ -397,28 +394,41 @@
 
         function renderCardDetail() {
             const detail = document.getElementById('cardDetailSection');
-            const empty = document.getElementById('noCardSelected');
             const list = document.getElementById('cardPurchasesList');
+            
+            // Calcular próximo mes
+            const currentIdx = monthNames.indexOf(currentMonth);
+            const nextMonth = monthNames[(currentIdx + 1) % 12];
+            const nextYear = (currentIdx === 11) ? (parseInt(currentYear) + 1).toString() : currentYear;
+
             document.querySelectorAll('.currentMonthName').forEach(el => el.innerText = currentMonth);
-            if (!selectedCardId) { if(detail) detail.classList.add('hidden'); if(empty) empty.classList.remove('hidden'); return; }
+            document.querySelectorAll('.nextMonthName').forEach(el => el.innerText = nextMonth);
+
+            if (!selectedCardId) { if(detail) detail.classList.add('hidden'); return; }
             if(detail) detail.classList.remove('hidden'); 
-            if(empty) empty.classList.add('hidden');
             if(list) list.innerHTML = '';
 
-            let totalDebt = 0, monthDebt = 0;
+            let totalDebt = 0, monthDebt = 0, nextMonthDebt = 0;
             state.cardPurchases.filter(p => p.active !== false && p.cardId === selectedCardId).forEach(p => {
                 totalDebt += p.totalAmount;
-                if (doesInstallmentApply(p, currentMonth, currentYear)) monthDebt += (p.totalAmount / p.installments);
+                const installmentValue = p.totalAmount / p.installments;
+                
+                if (doesInstallmentApply(p, currentMonth, currentYear)) monthDebt += installmentValue;
+                if (doesInstallmentApply(p, nextMonth, nextYear)) nextMonthDebt += installmentValue;
+
                 if(list) list.innerHTML += `<tr class="compact-row"><td class="px-3 py-2 font-medium">${p.name}</td><td class="px-3 py-2 text-right font-bold">$${p.totalAmount.toLocaleString()}</td><td class="px-3 py-2 text-center text-slate-400">${p.installments}</td><td class="px-3 py-2 text-right"><button onclick="window.hideDocById('cardPurchases', '${p.id}')" class="text-red-300 hover:text-red-500">🗑️</button></td></tr>`;
             });
+            
             document.getElementById('cardTotalDebt').innerText = `$${totalDebt.toLocaleString()}`;
             document.getElementById('cardMonthDebt').innerText = `$${monthDebt.toLocaleString()}`;
+            document.getElementById('cardNextMonthDebt').innerText = `$${nextMonthDebt.toLocaleString()}`;
         }
 
         function doesInstallmentApply(purchase, targetMonth, targetYear) {
             const startIdx = monthNames.indexOf(purchase.startMonth), startYear = parseInt(purchase.startYear);
             const targetIdx = monthNames.indexOf(targetMonth), targetYearInt = parseInt(targetYear);
             const totalMonthsElapsed = (targetYearInt - startYear) * 12 + (targetIdx - startIdx);
+            // Las cuotas suelen entrar el mes siguiente a la compra (mes 1) hasta el total de cuotas
             return totalMonthsElapsed >= 1 && totalMonthsElapsed <= purchase.installments;
         }
 
@@ -438,11 +448,8 @@
             list.innerHTML = ''; extraList.innerHTML = '';
             let incomesTotal = 0, paidTotal = 0, pendingTotal = 0;
             let catTotals = {}, yearStats = {};
-
-            // Unificar todos los gastos para poder ordenarlos
             let allExpenses = [];
 
-            // 1. Agregar Tarjetas
             state.cardPurchases.filter(p => p.active !== false).forEach(p => {
                 if (doesInstallmentApply(p, currentMonth, currentYear)) {
                     const amount = p.totalAmount / p.installments;
@@ -467,7 +474,6 @@
                 }
             });
 
-            // 2. Agregar Fijos
             state.monthly.filter(m => m.active !== false).forEach(m => {
                 if (m.year === currentYear && !yearStats[m.month]) yearStats[m.month] = { inc: 0, exp: 0 };
                 if (m.month === currentMonth && m.year === currentYear) {
@@ -480,18 +486,14 @@
                 }
             });
 
-            // Ordenar lista unificada
             allExpenses.sort((a, b) => {
                 let valA = a[currentSort.key], valB = b[currentSort.key];
-                if (typeof valA === 'string') {
-                    valA = valA.toLowerCase(); valB = valB.toLowerCase();
-                }
+                if (typeof valA === 'string') { valA = valA.toLowerCase(); valB = valB.toLowerCase(); }
                 if (valA < valB) return currentSort.direction === 'asc' ? -1 : 1;
                 if (valA > valB) return currentSort.direction === 'asc' ? 1 : -1;
                 return 0;
             });
 
-            // Renderizar ordenado
             allExpenses.forEach(m => {
                 const isPaid = m.status === 'paid';
                 const isCard = m.status === 'card';
@@ -515,7 +517,6 @@
                     </tr>`;
             });
 
-            // Procesar ingresos y variables (Extras)
             state.extras.filter(e => e.active !== false).forEach(e => {
                 if (e.year === currentYear) {
                     if (!yearStats[e.month]) yearStats[e.month] = { inc: 0, exp: 0 };
@@ -539,6 +540,7 @@
             document.getElementById('tableDateDisplay').innerText = `${currentMonth} ${currentYear}`;
             document.getElementById('kpiRestanteBox').className = `p-4 rounded-xl border shadow-sm ${finalEstimado < 0 ? 'bg-red-50 border-red-100 text-red-600' : 'bg-green-50 border-green-100 text-green-600'}`;
             renderCharts(catTotals, yearStats);
+            renderCardDetail();
         }
 
         window.hideDocById = async (collName, docId) => {
