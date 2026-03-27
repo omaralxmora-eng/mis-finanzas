@@ -123,7 +123,15 @@
                     
                     <div class="ai-card p-6 rounded-xl shadow-sm space-y-4">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Análisis IA</h3>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Análisis IA</h3>
+                                <button onclick="window.openModal('apiConfigModal')" class="text-slate-300 hover:text-blue-500 transition-colors" title="Configurar API Key">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </button>
+                            </div>
                             <button id="btnAskAI" class="text-[10px] bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 transition-colors font-bold uppercase">Analizar</button>
                         </div>
                         <div id="aiResponseContainer" class="space-y-3">
@@ -132,7 +140,7 @@
                                 <span class="text-[10px] font-bold text-slate-400 uppercase" id="aiStatusText">Sin análisis</span>
                             </div>
                             <div id="aiContent" class="text-xs text-slate-600 leading-relaxed italic max-h-64 overflow-y-auto pr-2">
-                                Presiona el botón para recibir consejos personalizados sobre tus finanzas de este mes.
+                                Presiona el botón para recibir consejos personalizados. Recuerda configurar tu API Key en el icono del engrane si aún no lo has hecho.
                             </div>
                         </div>
                         
@@ -154,6 +162,20 @@
     </div>
 
     <!-- Modales -->
+    <div id="apiConfigModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl w-full max-w-sm overflow-hidden shadow-2xl">
+            <div class="p-4 border-b font-bold flex justify-between text-xs uppercase bg-slate-50">
+                <span>Configurar Gemini API</span>
+                <button onclick="window.closeModal('apiConfigModal')">✕</button>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-[11px] text-slate-500 italic">La clave se guarda de forma privada en tu base de datos para evitar bloqueos.</p>
+                <input type="password" id="geminiApiKeyInput" placeholder="Pega tu API Key de Gemini aquí" class="w-full text-sm border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500">
+                <button onclick="window.saveGeminiKey()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold uppercase text-[10px]">Guardar Configuración</button>
+            </div>
+        </div>
+    </div>
+
     <div id="cardsModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
             <div class="p-4 bg-orange-600 text-white font-bold flex justify-between text-xs uppercase tracking-widest">
@@ -253,9 +275,9 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, collection, onSnapshot, addDoc, deleteDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, collection, onSnapshot, addDoc, deleteDoc, updateDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // CONFIGURACIÓN ORIGINAL DE FIREBASE
+        // CONFIGURACIÓN FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyAk5syowwLlOJ3DzYGfgsfNt4HtN3QmRXw",
             authDomain: "finanzas-11581.firebaseapp.com",
@@ -270,11 +292,10 @@
         const db = getFirestore(app);
         const appIdGlobal = 'f-v1';
         
-        // API KEY DE GEMINI (Actualizada o corregida según sea necesario)
-        const apiKeyGemini = "AIzaSyBeDvOhgUtcIxdCawH-A72iKZxLkje7XD8"; 
-        const GEMINI_MODEL = "gemini-2.5-flash";
+        const GEMINI_MODEL = "gemini-2.0-flash"; // Actualizado a la versión estable más reciente
 
         let user = null;
+        let userConfig = { geminiKey: "" }; // Estado local para la API Key
         const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
         let currentMonth = "";
         let currentYear = "";
@@ -322,6 +343,15 @@
         const getDocRef = (name, id) => doc(db, 'artifacts', appIdGlobal, 'users', user.uid, name, id);
 
         function initApp() {
+            // Escuchar configuración de API del usuario
+            const configRef = doc(db, 'artifacts', appIdGlobal, 'users', user.uid, 'settings', 'ai_config');
+            onSnapshot(configRef, snap => {
+                if (snap.exists()) {
+                    userConfig = snap.data();
+                    if (userConfig.geminiKey) document.getElementById('geminiApiKeyInput').value = "••••••••••••••••";
+                }
+            });
+
             onSnapshot(getCollRef('template'), snap => { state.template = snap.docs.map(d => ({id: d.id, ...d.data()})); renderTemplateList(); }, err => console.error(err));
             onSnapshot(getCollRef('monthly'), snap => { state.monthly = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); }, err => console.error(err));
             onSnapshot(getCollRef('extras'), snap => { state.extras = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); }, err => console.error(err));
@@ -338,8 +368,29 @@
             document.getElementById('btnLogout').onclick = () => signOut(auth);
         }
 
-        // LÓGICA DE GEMINI CON EXPONENTIAL BACKOFF
+        // GESTIÓN DE API KEY DINÁMICA
+        window.saveGeminiKey = async () => {
+            const newKey = document.getElementById('geminiApiKeyInput').value;
+            if (!newKey || newKey.includes('•')) { window.closeModal('apiConfigModal'); return; }
+            
+            try {
+                const configRef = doc(db, 'artifacts', appIdGlobal, 'users', user.uid, 'settings', 'ai_config');
+                await setDoc(configRef, { geminiKey: newKey });
+                alert("API Key configurada correctamente.");
+                window.closeModal('apiConfigModal');
+            } catch (e) {
+                alert("Error al guardar clave: " + e.message);
+            }
+        };
+
+        // LÓGICA DE GEMINI
         async function askGemini(isChat = false) {
+            if (!userConfig.geminiKey) {
+                alert("Primero debes configurar tu API Key en el icono del engrane de la sección IA.");
+                window.openModal('apiConfigModal');
+                return;
+            }
+
             const btn = document.getElementById('btnAskAI');
             const content = document.getElementById('aiContent');
             const statusDot = document.getElementById('aiStatusDot');
@@ -361,7 +412,7 @@
                 ? `${contextText}\n\nUsuario pregunta: "${query}". Responde brevemente en español.` 
                 : `${contextText}\n\nAnaliza estos datos y responde ESTRICTAMENTE en este formato JSON: {"eficiencia": 80, "riesgo": "Bajo", "mensaje": "Consejo breve aquí"}`;
             
-            const modelUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKeyGemini}`;
+            const modelUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${userConfig.geminiKey}`;
             
             const callWithRetry = async (retryCount = 0) => {
                 try {
@@ -372,7 +423,6 @@
                     });
 
                     if (!res.ok) {
-                        // Error 429 es el típico de "muchas peticiones"
                         if (res.status === 429 && retryCount < 5) {
                             const delay = Math.pow(2, retryCount) * 1000;
                             await new Promise(r => setTimeout(r, delay));
@@ -402,13 +452,13 @@
                 statusText.innerText = "Análisis completado";
             } catch (err) {
                 console.error("Gemini Fail:", err);
-                content.innerText = "Error: El servicio de IA está saturado o no disponible en este momento.";
+                content.innerText = "Error: El servicio de IA está saturado o la clave es inválida.";
                 statusDot.className = "h-2 w-2 rounded-full bg-red-500";
                 statusText.innerText = "Error de Conexión";
             } finally { btn.disabled = false; }
         }
 
-        // LÓGICA DE NEGOCIO Y RENDERIZADO
+        // LÓGICA DE NEGOCIO Y RENDERIZADO (Se mantiene igual a tu versión estable)
         function doesInstallmentApply(purchase, targetMonth, targetYear) {
             const startIdx = monthNames.indexOf(purchase.startMonth), startYear = parseInt(purchase.startYear);
             const targetIdx = monthNames.indexOf(targetMonth), targetYearInt = parseInt(targetYear);
@@ -541,51 +591,51 @@
             renderCharts(catTotals);
         }
 
-        window.hideDocById = async (coll, id) => { if (user) await updateDoc(getDocRef(coll, id), { active: false }); };
-        window.updateItemStatus = async (coll, id, status) => { if (user) await updateDoc(getDocRef(coll, id), { status }); };
-        window.toggleCardPayment = async (purchaseId) => {
-            const paymentId = `${purchaseId}_${currentMonth}_${currentYear}`;
-            const existing = state.cardPayments.find(p => p.id === paymentId);
-            if (existing) await deleteDoc(getDocRef('cardPayments', paymentId));
-            else await setDoc(getDocRef('cardPayments', paymentId), { purchaseId, month: currentMonth, year: currentYear, status: 'paid' });
-        };
-        window.addSingleFromTemplate = async (tid) => {
-            const t = state.template.find(i => i.id === tid);
-            if (user && t) await addDoc(getCollRef('monthly'), { name: t.name, amount: t.amount, category: t.category, month: currentMonth, year: currentYear, status: 'pending', active: true, timestamp: Date.now() });
-        };
+            window.hideDocById = async (coll, id) => { if (user) await updateDoc(getDocRef(coll, id), { active: false }); };
+            window.updateItemStatus = async (coll, id, status) => { if (user) await updateDoc(getDocRef(coll, id), { status }); };
+            window.toggleCardPayment = async (purchaseId) => {
+                const paymentId = `${purchaseId}_${currentMonth}_${currentYear}`;
+                const existing = state.cardPayments.find(p => p.id === paymentId);
+                if (existing) await deleteDoc(getDocRef('cardPayments', paymentId));
+                else await setDoc(getDocRef('cardPayments', paymentId), { purchaseId, month: currentMonth, year: currentYear, status: 'paid' });
+            };
+            window.addSingleFromTemplate = async (tid) => {
+                const t = state.template.find(i => i.id === tid);
+                if (user && t) await addDoc(getCollRef('monthly'), { name: t.name, amount: t.amount, category: t.category, month: currentMonth, year: currentYear, status: 'pending', active: true, timestamp: Date.now() });
+            };
 
-        function renderTemplateList() {
-            const list = document.getElementById('templateList');
-            if (!list) return; list.innerHTML = '';
-            state.template.filter(t => t.active !== false).forEach(t => {
-                list.innerHTML += `<div class="group flex items-center bg-white border-b p-2 hover:bg-slate-50"><button onclick="window.addSingleFromTemplate('${t.id}')" class="p-1.5 mr-2 bg-blue-50 text-blue-600 rounded"><b>+</b></button><div class="flex-1 text-xs font-bold text-slate-700 px-2">${t.name}</div><div class="font-black text-blue-600 text-xs">$${t.amount.toLocaleString()}</div><button onclick="window.hideDocById('template', '${t.id}')" class="ml-4 p-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100">🗑️</button></div>`;
-            });
-        }
-
-        function renderCharts(catTotals) {
-            const ctxE = document.getElementById('expenseChart');
-            if (!ctxE) return; if (expenseChart) expenseChart.destroy();
-            const keys = Object.keys(catTotals);
-            if (keys.length > 0) {
-                expenseChart = new Chart(ctxE, {
-                    type: 'doughnut',
-                    data: { labels: keys, datasets: [{ data: Object.values(catTotals), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6366f1', '#8b5cf6', '#ec4899', '#64748b'], borderWidth: 0 }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 6, font: { size: 9 } } } }, cutout: '75%' }
+            function renderTemplateList() {
+                const list = document.getElementById('templateList');
+                if (!list) return; list.innerHTML = '';
+                state.template.filter(t => t.active !== false).forEach(t => {
+                    list.innerHTML += `<div class="group flex items-center bg-white border-b p-2 hover:bg-slate-50"><button onclick="window.addSingleFromTemplate('${t.id}')" class="p-1.5 mr-2 bg-blue-50 text-blue-600 rounded"><b>+</b></button><div class="flex-1 text-xs font-bold text-slate-700 px-2">${t.name}</div><div class="font-black text-blue-600 text-xs">$${t.amount.toLocaleString()}</div><button onclick="window.hideDocById('template', '${t.id}')" class="ml-4 p-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100">🗑️</button></div>`;
                 });
             }
-        }
 
-        document.getElementById('authForm').onsubmit = async (e) => {
-            e.preventDefault();
-            try {
-                document.getElementById('loadingOverlay').classList.remove('hidden');
-                await signInWithEmailAndPassword(auth, e.target.authEmail.value, e.target.authPassword.value);
-            } catch (err) {
-                document.getElementById('loadingOverlay').classList.add('hidden');
-                document.getElementById('authError').innerText = "Credenciales incorrectas.";
-                document.getElementById('authError').classList.remove('hidden');
+            function renderCharts(catTotals) {
+                const ctxE = document.getElementById('expenseChart');
+                if (!ctxE) return; if (expenseChart) expenseChart.destroy();
+                const keys = Object.keys(catTotals);
+                if (keys.length > 0) {
+                    expenseChart = new Chart(ctxE, {
+                        type: 'doughnut',
+                        data: { labels: keys, datasets: [{ data: Object.values(catTotals), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6366f1', '#8b5cf6', '#ec4899', '#64748b'], borderWidth: 0 }] },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 6, font: { size: 9 } } } }, cutout: '75%' }
+                    });
+                }
             }
-        };
+
+            document.getElementById('authForm').onsubmit = async (e) => {
+                e.preventDefault();
+                try {
+                    document.getElementById('loadingOverlay').classList.remove('hidden');
+                    await signInWithEmailAndPassword(auth, e.target.authEmail.value, e.target.authPassword.value);
+                } catch (err) {
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                    document.getElementById('authError').innerText = "Credenciales incorrectas.";
+                    document.getElementById('authError').classList.remove('hidden');
+                }
+            };
     </script>
 </body>
 </html>
