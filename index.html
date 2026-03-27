@@ -381,26 +381,33 @@
             } catch (e) { alert(e.message); }
         };
 
-        // LÓGICA DE CUOTAS MEJORADA
+        /** * LÓGICA DE CUOTAS CON DESPLAZAMIENTO AL MES SIGUIENTE
+         * Se suma +1 al offset inicial para que la cuota 1 ocurra en (Mes de compra + 1)
+         */
         function getInstallmentInfo(purchase, targetMonth, targetYear) {
             const startMonthIdx = monthNames.indexOf(purchase.startMonth);
             const startYear = parseInt(purchase.startYear);
             const targetMonthIdx = monthNames.indexOf(targetMonth);
             const targetYearInt = parseInt(targetYear);
 
-            // Meses totales desde el inicio de la compra hasta el objetivo
-            const totalMonthsElapsed = (targetYearInt - startYear) * 12 + (targetMonthIdx - startMonthIdx);
+            // Meses totales transcurridos desde el mes de registro
+            const monthsSincePurchase = (targetYearInt - startYear) * 12 + (targetMonthIdx - startMonthIdx);
             
-            // La cuota 1 se paga en el mes de inicio (totalMonthsElapsed = 0)
-            const cuotaActual = totalMonthsElapsed + 1;
+            // AJUSTE: La cuota 1 es en el mes de compra + 1
+            // Por lo tanto, si monthsSincePurchase es 1, es la Cuota 1.
+            const cuotaActual = monthsSincePurchase; 
             const applies = cuotaActual >= 1 && cuotaActual <= purchase.installments;
 
-            // Calcular mes final
-            let endMonthIdx = (startMonthIdx + (purchase.installments - 1)) % 12;
-            let endYear = startYear + Math.floor((startMonthIdx + (purchase.installments - 1)) / 12);
+            // Calcular rango visual (Inicia mes siguiente)
+            let realStartMIdx = (startMonthIdx + 1) % 12;
+            let realStartY = startYear + (startMonthIdx + 1 >= 12 ? 1 : 0);
+            
+            let endMonthIdx = (startMonthIdx + purchase.installments) % 12;
+            let endYear = startYear + Math.floor((startMonthIdx + purchase.installments) / 12);
+
             const rangeText = purchase.installments > 1 
-                ? `${purchase.startMonth.slice(0,3)} - ${monthNames[endMonthIdx].slice(0,3)} ${endYear}`
-                : `${purchase.startMonth.slice(0,3)} ${startYear}`;
+                ? `${monthNames[realStartMIdx].slice(0,3)} ${realStartY} - ${monthNames[endMonthIdx].slice(0,3)} ${endYear}`
+                : `${monthNames[realStartMIdx].slice(0,3)} ${realStartY}`;
 
             return { applies, cuotaActual, rangeText };
         }
@@ -424,7 +431,7 @@
             
             let totalRemainingDebt = 0, monthDebt = 0, nextMonthDebt = 0;
             
-            // Cálculo Siguiente Mes
+            // Cálculo Siguiente Mes para el KPI de la tarjeta
             let nextMIdx = (monthNames.indexOf(currentMonth) + 1) % 12;
             let nextY = parseInt(currentYear) + (nextMIdx === 0 ? 1 : 0);
             let nextM = monthNames[nextMIdx];
@@ -433,19 +440,19 @@
                 const infoCurrent = getInstallmentInfo(p, currentMonth, currentYear);
                 const infoNext = getInstallmentInfo(p, nextM, nextY.toString());
 
-                // Cálculo de deuda restante total (basado en cuotas que faltan por pagar desde HOY)
-                // Se asume que totalAmount es el total original.
                 const cuotaMonto = p.totalAmount / p.installments;
                 
-                // Determinamos cuántas cuotas se han "vencido" hasta el mes actual
+                // Deuda restante: Consideramos cuotas que vencen DESPUÉS del mes actual
+                // Si estamos en el mes de compra (monthsSincePurchase = 0), todavía debe todas las cuotas.
                 const startMIdx = monthNames.indexOf(p.startMonth);
                 const startY = parseInt(p.startYear);
                 const curMIdx = monthNames.indexOf(currentMonth);
                 const curY = parseInt(currentYear);
-                const monthsElapsed = (curY - startY) * 12 + (curMIdx - startMIdx);
+                const monthsSincePurchase = (curY - startY) * 12 + (curMIdx - startMIdx);
                 
-                const cuotasPagadasOEnCurso = Math.max(0, monthsElapsed); 
-                const cuotasRestantes = Math.max(0, p.installments - cuotasPagadasOEnCurso);
+                // Las cuotas ya pagadas son aquellas donde cuotaActual < actual (o sea cuotas pasadas)
+                const cuotasPagadas = Math.max(0, monthsSincePurchase - 1); 
+                const cuotasRestantes = Math.max(0, p.installments - cuotasPagadas);
                 totalRemainingDebt += (cuotasRestantes * cuotaMonto);
 
                 if (infoCurrent.applies) monthDebt += cuotaMonto;
@@ -453,8 +460,8 @@
 
                 if (infoCurrent.applies) {
                 list.innerHTML += `
-                    <tr class="compact-row">
-                        <td class="px-3 py-2 font-medium">${p.name}</td>
+                    <tr class="compact-row ${infoCurrent.applies ? 'bg-orange-50/30' : ''}">
+                        <td class="px-3 py-2 font-medium">${p.name} ${infoCurrent.applies ? '🔥' : ''}</td>
                         <td class="px-3 py-2 text-right font-bold">$${p.totalAmount.toLocaleString()}</td>
                         <td class="px-3 py-2 text-center text-slate-400">
                             ${infoCurrent.applies ? `<span class="text-blue-600 font-bold">${infoCurrent.cuotaActual}</span>` : '-'}/${p.installments}
@@ -464,8 +471,6 @@
                             <button onclick="window.hideDocById('cardPurchases', '${p.id}')" class="text-red-300 hover:text-red-500">🗑️</button>
                         </td>
                     </tr>`;
-                } else {
-                    
                 }
             });
 
@@ -495,7 +500,7 @@
             const activeSortEl = document.getElementById(`sort-${sortConfig.key}`);
             if (activeSortEl) activeSortEl.innerText = sortConfig.direction === 'asc' ? ' ↑' : ' ↓';
 
-            // 1. Procesar Cuotas de Tarjetas
+            // 1. Procesar Cuotas de Tarjetas (Solo las que aplican al mes seleccionado)
             state.cardPurchases.filter(p => p.active !== false).forEach(p => {
                 const info = getInstallmentInfo(p, currentMonth, currentYear);
                 if (info.applies) {
