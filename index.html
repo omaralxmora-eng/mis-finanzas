@@ -451,6 +451,7 @@
                 if (infoCurrent.applies) monthDebt += cuotaMonto;
                 if (infoNext.applies) nextMonthDebt += cuotaMonto;
 
+                if (infoCurrent.applies) {
                 list.innerHTML += `
                     <tr class="compact-row">
                         <td class="px-3 py-2 font-medium">${p.name}</td>
@@ -463,6 +464,9 @@
                             <button onclick="window.hideDocById('cardPurchases', '${p.id}')" class="text-red-300 hover:text-red-500">🗑️</button>
                         </td>
                     </tr>`;
+                } else {
+                    
+                }
             });
 
             document.getElementById('cardTotalDebt').innerText = `$${Math.round(totalRemainingDebt).toLocaleString()}`;
