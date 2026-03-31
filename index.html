@@ -125,24 +125,6 @@
                         <h3 class="text-[10px] font-bold text-slate-400 uppercase mb-4 tracking-widest text-center">Distribución Gastos</h3>
                         <div class="relative h-64"><canvas id="expenseChart"></canvas></div>
                     </div>
-                    
-                    <div class="ai-card p-6 rounded-xl shadow-sm space-y-4">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <h3 class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Análisis IA</h3>
-                            </div>
-                            <button id="btnAskAI" class="text-[10px] bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 transition-colors font-bold uppercase">Analizar</button>
-                        </div>
-                        <div id="aiResponseContainer" class="space-y-3">
-                            <div id="aiStatus" class="flex items-center gap-2">
-                                <div class="h-2 w-2 rounded-full bg-slate-300" id="aiStatusDot"></div>
-                                <span class="text-[10px] font-bold text-slate-400 uppercase" id="aiStatusText">Sin análisis</span>
-                            </div>
-                            <div id="aiContent" class="text-xs text-slate-600 leading-relaxed italic max-h-64 overflow-y-auto pr-2">
-                                Presiona el botón para recibir consejos personalizados.
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </main>
@@ -181,20 +163,27 @@
 
     <div id="cardsModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-            <div class="p-4 bg-orange-600 text-white font-bold flex justify-between text-xs uppercase tracking-widest">
-                <span>Gestión de Tarjetas</span>
+            <div class="p-4 bg-orange-600 text-white font-bold flex justify-between items-center text-xs uppercase tracking-widest">
+                <div class="flex items-center gap-4">
+                    <span>Gestión de Tarjetas</span>
+                    <!-- Selector de fecha dentro del modal -->
+                    <div class="flex items-center gap-1 bg-orange-700 px-2 py-1 rounded">
+                        <select id="modalMonthSelector" class="bg-transparent border-none focus:ring-0 text-white font-bold cursor-pointer text-[10px] p-0"></select>
+                        <select id="modalYearSelector" class="bg-transparent border-none focus:ring-0 text-orange-200 font-bold cursor-pointer text-[10px] p-0"></select>
+                    </div>
+                </div>
                 <button onclick="window.closeModal('cardsModal')">✕</button>
             </div>
             <div class="p-6 overflow-y-auto space-y-6">
                 <form id="cardCreateForm" class="flex gap-2">
-                    <input type="text" id="newCardName" placeholder="Nombre de Tarjeta" class="flex-1 text-sm border p-2 rounded" required>
-                    <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded text-xs font-bold uppercase">Crear</button>
+                    <input type="text" id="newCardName" placeholder="Nueva Tarjeta" class="flex-1 text-sm border p-2 rounded" required>
+                    <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded text-xs font-bold uppercase">Añadir</button>
                 </form>
-                <div id="cardSelectorContainer" class="flex flex-wrap gap-6 py-2 border-b"></div>
+                <div id="cardSelectorContainer" class="flex flex-wrap gap-2 py-2 border-b"></div>
                 <div id="cardDetailSection" class="hidden space-y-4">
                     <div id="cardStats" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
                     <form id="cardPurchaseForm" class="grid grid-cols-1 sm:grid-cols-12 gap-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                        <input type="text" id="cpName" placeholder="Concepto" class="sm:col-span-5 text-sm border p-2 rounded" required>
+                        <input type="text" id="cpName" placeholder="Compra" class="sm:col-span-5 text-sm border p-2 rounded" required>
                         <input type="number" id="cpAmount" placeholder="Total" class="sm:col-span-3 text-sm border p-2 rounded" required>
                         <input type="number" id="cpInstallments" placeholder="Cuotas" value="1" min="1" class="sm:col-span-2 text-sm border p-2 rounded" required>
                         <button type="submit" class="sm:col-span-2 bg-blue-600 text-white rounded font-bold text-xs uppercase">Añadir</button>
@@ -206,7 +195,7 @@
                                     <th class="px-3 py-2">Concepto</th>
                                     <th class="px-3 py-2 text-right">Total</th>
                                     <th class="px-3 py-2 text-center">Plan</th>
-                                    <th class="px-3 py-2 text-center">Periodo</th>
+                                    <th class="px-3 py-2 text-center">Estado Periodo</th>
                                     <th class="px-3 py-2 text-right">Acción</th>
                                 </tr>
                             </thead>
@@ -281,10 +270,8 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         const appIdGlobal = 'f-v1';
-        const GEMINI_MODEL = "gemini-2.0-flash";
 
         let user = null;
-        let userConfig = { geminiKey: "" };
         const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
         let currentMonth = "";
         let currentYear = "";
@@ -312,18 +299,47 @@
             document.getElementById('loadingOverlay').classList.add('hidden');
         });
 
+        const updateSyncSelectors = (sourceId, targetIds) => {
+            const val = document.getElementById(sourceId).value;
+            targetIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = val;
+            });
+            if (sourceId.includes('Month')) currentMonth = val;
+            else currentYear = val;
+            refreshUI();
+        };
+
         const initDateSelectors = () => {
             const now = new Date();
             let monthName = now.toLocaleString('es-ES', { month: 'long' });
             monthName = monthName.charAt(0).toUpperCase() + monthName.slice(1);
-            const monthSel = document.getElementById('monthSelector');
-            const yearSel = document.getElementById('yearSelector');
-            monthSel.value = monthNames.includes(monthName) ? monthName : monthNames[now.getMonth()];
-            yearSel.value = now.getFullYear().toString();
-            currentMonth = monthSel.value;
-            currentYear = yearSel.value;
-            monthSel.addEventListener('change', (e) => { currentMonth = e.target.value; refreshUI(); });
-            yearSel.addEventListener('change', (e) => { currentYear = e.target.value; refreshUI(); });
+            
+            const mMain = document.getElementById('monthSelector');
+            const yMain = document.getElementById('yearSelector');
+            const mModal = document.getElementById('modalMonthSelector');
+            const yModal = document.getElementById('modalYearSelector');
+
+            // Llenar selectores del modal (copia de los principales)
+            mModal.innerHTML = mMain.innerHTML;
+            yModal.innerHTML = yMain.innerHTML;
+
+            const targetMonth = monthNames.includes(monthName) ? monthName : monthNames[now.getMonth()];
+            const targetYear = now.getFullYear().toString();
+
+            mMain.value = targetMonth;
+            yMain.value = targetYear;
+            mModal.value = targetMonth;
+            yModal.value = targetYear;
+
+            currentMonth = targetMonth;
+            currentYear = targetYear;
+
+            // Sincronización bidireccional
+            mMain.addEventListener('change', () => updateSyncSelectors('monthSelector', ['modalMonthSelector']));
+            mModal.addEventListener('change', () => updateSyncSelectors('modalMonthSelector', ['monthSelector']));
+            yMain.addEventListener('change', () => updateSyncSelectors('yearSelector', ['modalYearSelector']));
+            yModal.addEventListener('change', () => updateSyncSelectors('modalYearSelector', ['yearSelector']));
         };
 
         const getCollRef = (name) => collection(db, 'artifacts', appIdGlobal, 'users', user.uid, name);
@@ -337,7 +353,6 @@
             onSnapshot(getCollRef('cardPurchases'), snap => { state.cardPurchases = snap.docs.map(d => ({id: d.id, ...d.data()})); renderCardDetail(); refreshUI(); });
             onSnapshot(getCollRef('cardPayments'), snap => { state.cardPayments = snap.docs.map(d => ({id: d.id, ...d.data()})); renderCardDetail(); refreshUI(); });
 
-            document.getElementById('btnAskAI').onclick = () => askGemini();
             document.getElementById('cardCreateForm').onsubmit = async (e) => { e.preventDefault(); await addDoc(getCollRef('cards'), { name: e.target.newCardName.value, active: true }); e.target.reset(); };
             document.getElementById('cardPurchaseForm').onsubmit = async (e) => { 
                 e.preventDefault(); 
@@ -386,7 +401,7 @@
             const targetMonthIdx = monthNames.indexOf(targetMonth);
             const targetYearInt = parseInt(targetYear);
             const monthsSincePurchase = (targetYearInt - startYear) * 12 + (targetMonthIdx - startMonthIdx);
-            const cuotaActual = monthsSincePurchase; 
+            const cuotaActual = monthsSincePurchase + 1; 
             const applies = cuotaActual >= 1 && cuotaActual <= purchase.installments;
             return { applies, cuotaActual };
         }
@@ -420,11 +435,14 @@
                 
                 const startMIdx = monthNames.indexOf(p.startMonth);
                 const monthsSincePurchase = (parseInt(currentYear) - parseInt(p.startYear)) * 12 + (monthNames.indexOf(currentMonth) - startMIdx);
-                const cuotasRestantes = Math.max(0, p.installments - Math.max(0, monthsSincePurchase - 1));
+                const cuotasRestantes = Math.max(0, p.installments - Math.max(0, monthsSincePurchase));
                 totalRemainingDebt += (cuotasRestantes * cuotaMonto);
 
                 if (info.applies) monthDebt += cuotaMonto;
                 if (infoNext.applies) nextMonthDebt += cuotaMonto;
+
+                const paymentId = `${p.id}_${currentMonth}_${currentYear}`;
+                const isPaid = state.cardPayments.some(pay => pay.id === paymentId);
 
                 if (info.applies) {
                 list.innerHTML += `
@@ -432,7 +450,11 @@
                         <td class="px-3 py-2 font-medium">${p.name}</td>
                         <td class="px-3 py-2 text-right font-bold">$${p.totalAmount.toLocaleString()}</td>
                         <td class="px-3 py-2 text-center text-slate-400">${info.applies ? info.cuotaActual : '-'}/${p.installments}</td>
-                        <td class="px-3 py-2 text-center text-[9px] text-slate-400 font-mono italic">Cuotas activas</td>
+                        <td class="px-3 py-2 text-center">
+                            <span class="status-badge ${info.applies ? (isPaid ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700') : 'bg-slate-100 text-slate-400'}">
+                                ${info.applies ? (isPaid ? 'Pagado' : 'Pendiente') : 'N/A'}
+                            </span>
+                        </td>
                         <td class="px-3 py-2 text-right">
                             <button onclick="window.hideDocById('cardPurchases', '${p.id}')" class="text-red-300 hover:text-red-500">🗑️</button>
                         </td>
@@ -446,11 +468,11 @@
                     <p class="text-lg font-black text-slate-800">$${Math.round(totalRemainingDebt).toLocaleString()}</p>
                 </div>
                 <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                    <p class="text-[9px] uppercase font-bold text-blue-400">Mes Actual</p>
+                    <p class="text-[9px] uppercase font-bold text-blue-400">Total ${currentMonth}</p>
                     <p class="text-lg font-black text-blue-600">$${Math.round(monthDebt).toLocaleString()}</p>
                 </div>
                 <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
-                    <p class="text-[9px] uppercase font-bold text-indigo-400">Siguiente Mes</p>
+                    <p class="text-[9px] uppercase font-bold text-indigo-400">Próximo Mes</p>
                     <p class="text-lg font-black text-indigo-600">$${Math.round(nextMonthDebt).toLocaleString()}</p>
                 </div>`;
         }
@@ -559,19 +581,6 @@
             document.getElementById('tableDateDisplay').innerText = `${currentMonth} ${currentYear}`;
             renderCharts(catTotals);
             if (selectedCardId) renderCardDetail();
-        }
-
-        async function askGemini() {
-            const content = document.getElementById('aiContent');
-            const statusDot = document.getElementById('aiStatusDot');
-            const statusText = document.getElementById('aiStatusText');
-            statusDot.className = "h-2 w-2 rounded-full bg-blue-500 animate-pulse";
-            statusText.innerText = "Simulando análisis...";
-            setTimeout(() => {
-                content.innerHTML = "El análisis está disponible al configurar tu API Key de Gemini en la configuración.";
-                statusDot.className = "h-2 w-2 rounded-full bg-green-500";
-                statusText.innerText = "Completado";
-            }, 1000);
         }
 
         window.hideDocById = async (coll, id) => { if (user) await updateDoc(getDocRef(coll, id), { active: false }); };
