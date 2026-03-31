@@ -299,15 +299,26 @@
         });
 
         const updateSyncSelectors = (sourceId, targetIds) => {
-            const val = document.getElementById(sourceId).value;
-            targetIds.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.value = val;
-            });
-            if (sourceId.includes('Month')) currentMonth = val;
-            else currentYear = val;
-            refreshUI();
-        };
+    const val = document.getElementById(sourceId).value;
+
+    // Sincronizar selects
+    targetIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+    });
+
+    // 🔥 FIX: detectar correctamente si es mes o año
+    if (sourceId === 'monthSelector' || sourceId === 'modalMonthSelector') {
+        currentMonth = val;
+    } else if (sourceId === 'yearSelector' || sourceId === 'modalYearSelector') {
+        currentYear = val;
+    }
+
+    // Debug opcional
+    // console.log("Mes:", currentMonth, "Año:", currentYear);
+
+    refreshUI();
+};
 
         const initDateSelectors = () => {
             const now = new Date();
