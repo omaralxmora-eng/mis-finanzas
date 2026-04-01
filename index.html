@@ -125,6 +125,19 @@
                         <h3 class="text-[10px] font-bold text-slate-400 uppercase mb-4 tracking-widest text-center">Distribución Gastos</h3>
                         <div class="relative h-64"><canvas id="expenseChart"></canvas></div>
                     </div>
+
+                    <!-- SECCIÓN DE NOTAS GENERALES -->
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="flex justify-between items-center p-4 bg-slate-50 border-b">
+                            <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Notas Generales</h3>
+                            <button onclick="window.openNoteModal()" class="bg-blue-600 text-white p-1 rounded-full hover:bg-blue-700 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
+                            </button>
+                        </div>
+                        <div id="notesContainer" class="max-h-[350px] overflow-y-auto">
+                            <!-- Lista de notas inyectada por JS -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -251,6 +264,25 @@
         </div>
     </div>
 
+    <!-- Modal de Notas (Visualización y Edición) -->
+    <div id="noteModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div class="p-4 border-b font-bold flex justify-between text-xs uppercase bg-slate-50">
+                <span id="noteModalTitle">Nota</span>
+                <div class="flex gap-4">
+                    <button id="btnDeleteNote" class="text-red-400 hover:text-red-600 hidden text-[10px] font-black uppercase">Eliminar</button>
+                    <button onclick="window.closeNoteModal()" class="text-slate-400">✕</button>
+                </div>
+            </div>
+            <div class="p-6 space-y-4">
+                <input type="text" id="noteTitleInput" placeholder="Título de la nota" class="w-full p-2 border rounded-lg text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none">
+                <textarea id="noteBodyInput" placeholder="Escribe aquí tus apuntes..." class="w-full min-h-[250px] p-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"></textarea>
+                <input type="hidden" id="editingNoteId" value="">
+                <button onclick="window.saveNote()" class="w-full bg-blue-600 text-white py-2 rounded font-bold uppercase text-[11px] tracking-wide">Guardar Nota</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -274,7 +306,7 @@
         const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
         let currentMonth = "";
         let currentYear = "";
-        
+
         let state = { template: [], monthly: [], extras: [], cards: [], cardPurchases: [], cardPayments: [] };
         let financials = { ingresos: 0, pagado: 0, pendiente: 0, totalGastos: 0 };
         let selectedCardId = null;
@@ -284,6 +316,104 @@
         window.openModal = (id) => document.getElementById(id)?.classList.remove('hidden');
         window.closeModal = (id) => document.getElementById(id)?.classList.add('hidden');
 
+        // GESTIÓN DE NOTAS MEJORADA
+        window.openNoteModal = (id = null) => {
+            const titleInput = document.getElementById('noteTitleInput');
+            const bodyInput = document.getElementById('noteBodyInput');
+            const idInput = document.getElementById('editingNoteId');
+            const delBtn = document.getElementById('btnDeleteNote');
+
+            if (id) {
+                const note = state.notes.find(n => n.id === id);
+                if (note) {
+                    titleInput.value = note.title || '';
+                    bodyInput.value = note.content || '';
+                    idInput.value = id;
+                    document.getElementById('noteModalTitle').innerText = 'Editar Nota';
+                    delBtn.classList.remove('hidden');
+                    delBtn.onclick = () => window.deleteNote(id);
+                }
+            } else {
+                titleInput.value = '';
+                bodyInput.value = '';
+                idInput.value = '';
+                document.getElementById('noteModalTitle').innerText = 'Nueva Nota';
+                delBtn.classList.add('hidden');
+            }
+            window.openModal('noteModal');
+        };
+
+        window.closeNoteModal = () => {
+            window.closeModal('noteModal');
+        };
+
+        window.saveNote = async () => {
+            const title = document.getElementById('noteTitleInput').value.trim();
+            const content = document.getElementById('noteBodyInput').value.trim();
+            const noteId = document.getElementById('editingNoteId').value;
+
+            if (!title && !content) return;
+
+            try {
+                if (noteId) {
+                    await updateDoc(doc(db, 'artifacts', appIdGlobal, 'users', user.uid, 'notes', noteId), {
+                        title: title || 'Sin título',
+                        content,
+                        timestamp: Date.now()
+                    });
+                } else {
+                    await addDoc(collection(db, 'artifacts', appIdGlobal, 'users', user.uid, 'notes'), {
+                        title: title || 'Sin título',
+                        content,
+                        active: true,
+                        deleted: false,
+                        timestamp: Date.now()
+                    });
+                }
+                window.closeNoteModal();
+            } catch (e) {
+                console.error("Error guardando nota:", e);
+            }
+        };
+
+        window.deleteNote = async (id) => {
+            console.log("eliminando nota")
+            
+                try {
+                    // Usamos la propiedad 'deleted' como en los movimientos financieros
+                    await updateDoc(doc(db, 'artifacts', appIdGlobal, 'users', user.uid, 'notes', id), {
+                        deleted: true,
+                        active: false
+                    });
+                    window.closeNoteModal();
+                } catch (e) {
+                    console.error("Error eliminando nota:", e);
+                }
+            
+        };
+
+        function renderNotesList() {
+            const container = document.getElementById('notesContainer');
+            // Filtrar las que NO están marcadas como deleted
+            const activeNotes = state.notes.filter(n => !n.deleted && n.active !== false);
+
+            if (activeNotes.length === 0) {
+                container.innerHTML = `<p class="text-center text-[11px] text-slate-400 py-8 italic px-4">No hay notas guardadas.</p>`;
+                return;
+            }
+
+            container.innerHTML = activeNotes
+                .sort((a, b) => b.timestamp - a.timestamp)
+                .map(note => {
+                    const date = new Date(note.timestamp).toLocaleDateString('es-ES', { day:'2-digit', month:'short' });
+                    return `
+                        <div class="note-item" onclick="window.openNoteModal('${note.id}')">
+                            <span class="note-item-title">${note.title || 'Sin título'}</span>
+                        </div>
+                    `;
+                }).join('');
+        }
+
         onAuthStateChanged(auth, u => {
             user = u;
             if (u) {
@@ -291,6 +421,11 @@
                 initApp();
                 document.getElementById('authContainer').classList.add('hidden');
                 document.getElementById('appContent').classList.remove('hidden');
+
+                onSnapshot(collection(db, 'artifacts', appIdGlobal, 'users', user.uid, 'notes'), snap => {
+                    state.notes = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                    renderNotesList();
+                });
             } else {
                 document.getElementById('authContainer').classList.remove('hidden');
                 document.getElementById('appContent').classList.add('hidden');
@@ -324,7 +459,7 @@
             const now = new Date();
             let monthName = now.toLocaleString('es-ES', { month: 'long' });
             monthName = monthName.charAt(0).toUpperCase() + monthName.slice(1);
-            
+
             const mMain = document.getElementById('monthSelector');
             const yMain = document.getElementById('yearSelector');
             const mModal = document.getElementById('modalMonthSelector');
@@ -362,20 +497,20 @@
             onSnapshot(getCollRef('cardPayments'), snap => { state.cardPayments = snap.docs.map(d => ({id: d.id, ...d.data()})); renderCardDetail(); refreshUI(); });
 
             document.getElementById('cardCreateForm').onsubmit = async (e) => { e.preventDefault(); await addDoc(getCollRef('cards'), { name: e.target.newCardName.value, active: true }); e.target.reset(); };
-            document.getElementById('cardPurchaseForm').onsubmit = async (e) => { 
-                e.preventDefault(); 
-                if(!selectedCardId) return; 
-                await addDoc(getCollRef('cardPurchases'), { 
-                    cardId: selectedCardId, 
-                    name: e.target.cpName.value, 
-                    totalAmount: parseFloat(e.target.cpAmount.value), 
-                    installments: parseInt(e.target.cpInstallments.value), 
-                    startMonth: currentMonth, 
-                    startYear: currentYear, 
-                    active: true, 
-                    timestamp: Date.now() 
-                }); 
-                e.target.reset(); 
+            document.getElementById('cardPurchaseForm').onsubmit = async (e) => {
+                e.preventDefault();
+                if(!selectedCardId) return;
+                await addDoc(getCollRef('cardPurchases'), {
+                    cardId: selectedCardId,
+                    name: e.target.cpName.value,
+                    totalAmount: parseFloat(e.target.cpAmount.value),
+                    installments: parseInt(e.target.cpInstallments.value),
+                    startMonth: currentMonth,
+                    startYear: currentYear,
+                    active: true,
+                    timestamp: Date.now()
+                });
+                e.target.reset();
             };
             document.getElementById('templateForm').onsubmit = async (e) => { e.preventDefault(); await addDoc(getCollRef('template'), { name: e.target.fsName.value, amount: parseFloat(e.target.fsAmount.value), category: e.target.fsCategory.value, active: true, timestamp: Date.now() }); e.target.reset(); };
             document.getElementById('transactionForm').onsubmit = async (e) => { e.preventDefault(); await addDoc(getCollRef('extras'), { type: e.target.tType.value, name: e.target.tName.value, amount: parseFloat(e.target.tAmount.value), category: e.target.tCategory.value, month: currentMonth, year: currentYear, active: true, timestamp: Date.now() }); window.closeModal('transactionModal'); e.target.reset(); };
@@ -409,13 +544,13 @@
             const targetMonthIdx = monthNames.indexOf(targetMonth);
             const targetYearInt = parseInt(targetYear);
             const monthsSincePurchase = (targetYearInt - startYear) * 12 + (targetMonthIdx - startMonthIdx);
-            const cuotaActual = monthsSincePurchase + 1; 
+            const cuotaActual = monthsSincePurchase + 1;
             const applies = cuotaActual >= 1 && cuotaActual <= purchase.installments;
             return { applies, cuotaActual };
         }
 
         window.selectCard = (id) => { selectedCardId = id; renderCardSelector(); renderCardDetail(); };
-        
+
         function renderCardSelector() {
             const container = document.getElementById('cardSelectorContainer');
             if (!container) return; container.innerHTML = '';
@@ -431,13 +566,13 @@
             const stats = document.getElementById('cardStats');
             if (!selectedCardId) { if(detail) detail.classList.add('hidden'); return; }
             detail.classList.remove('hidden'); list.innerHTML = '';
-            
+
             let totalRemainingDebt = 0, monthDebt = 0, nextMonthDebt = 0;
             let currentMIdx = monthNames.indexOf(currentMonth);
-            
+
             let nextMIdx = (currentMIdx + 1) % 12;
             let nextY = parseInt(currentYear) + (nextMIdx === 0 ? 1 : 0);
-            
+
             let afterMIdx = (nextMIdx + 1) % 12;
             let afterY = nextY + (afterMIdx === 0 ? 1 : 0);
 
@@ -445,7 +580,7 @@
                 const info = getInstallmentInfo(p, currentMonth, currentYear);
                 const infoNext = getInstallmentInfo(p, monthNames[nextMIdx], nextY.toString());
                 const cuotaMonto = p.totalAmount / p.installments;
-                
+
                 const startMIdx = monthNames.indexOf(p.startMonth);
                 const monthsSincePurchase = (parseInt(currentYear) - parseInt(p.startYear)) * 12 + (currentMIdx - startMIdx);
                 const cuotasRestantes = Math.max(0, p.installments - Math.max(0, monthsSincePurchase));
@@ -530,7 +665,7 @@
                 type: 'card',
                 isIncome: false,
                 timestamp: p.timestamp || 0
-            });        
+            });
 
             if (isPaid) financials.pagado += amount; else financials.pendiente += amount;
                     financials.totalGastos += amount;
@@ -565,7 +700,7 @@
                 const isPaid = m.status === 'paid';
                 const isIncome = m.isIncome;
                 const canEdit = m.type !== 'card';
-                
+
                 list.innerHTML += `
                     <tr class="compact-row ${isIncome ? 'bg-green-50/50' : ''}">
                         <td class="px-4 py-3 font-semibold ${isIncome ? 'text-green-700' : 'text-slate-700'}">
@@ -585,9 +720,9 @@
                             </span>
                         </td>
                         <td class="px-4 py-3 text-right flex justify-end gap-1">
-                            ${m.type === 'card' ? 
-                                `<button onclick="window.toggleCardPayment('${m.id}')" class="btn-action text-blue-500 font-bold">${isPaid ? '↩' : '✓'}</button>` : 
-                                (m.type === 'extra' ? 
+                            ${m.type === 'card' ?
+                                `<button onclick="window.toggleCardPayment('${m.id}')" class="btn-action text-blue-500 font-bold">${isPaid ? '↩' : '✓'}</button>` :
+                                (m.type === 'extra' ?
                                     `<div class="flex gap-1">
                                         <button onclick="window.hideDocById('extras', '${m.id}')" class="btn-action text-red-300">🗑️</button>
                                     </div>` :
@@ -628,7 +763,7 @@
             const card = state.cards.find(c => c.id === cardId);
             return card ? card.name : 'Tarjeta';
         }
-        
+
         function renderTemplateList() {
             const list = document.getElementById('templateList');
             if (!list) return; list.innerHTML = '';
