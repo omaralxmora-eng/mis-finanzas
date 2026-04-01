@@ -519,8 +519,20 @@
                     const amount = p.totalAmount / p.installments;
                     const paymentId = `${p.id}_${currentMonth}_${currentYear}`;
                     const isPaid = state.cardPayments.some(pay => pay.id === paymentId);
-                    allItems.push({ id: p.id, name: `Cuota ${info.cuotaActual}/${p.installments}: ${p.name}`, category: 'Créditos', amount, status: isPaid ? 'paid' : 'pending', type: 'card', isIncome: false, timestamp: p.timestamp || 0 });
-                    if (isPaid) financials.pagado += amount; else financials.pendiente += amount;
+            const cardName = getCardName(p.cardId);
+
+            allItems.push({
+                id: p.id,
+                name: `${cardName} · Cuota ${info.cuotaActual}/${p.installments}: ${p.name}`,
+                category: 'Créditos',
+                amount,
+                status: isPaid ? 'paid' : 'pending',
+                type: 'card',
+                isIncome: false,
+                timestamp: p.timestamp || 0
+            });        
+
+            if (isPaid) financials.pagado += amount; else financials.pendiente += amount;
                     financials.totalGastos += amount;
                     catTotals['Créditos'] = (catTotals['Créditos'] || 0) + amount;
                 }
@@ -612,6 +624,11 @@
             if (user && t) await addDoc(getCollRef('monthly'), { name: t.name, amount: t.amount, category: t.category, month: currentMonth, year: currentYear, status: 'pending', active: true, timestamp: Date.now() });
         };
 
+        function getCardName(cardId) {
+            const card = state.cards.find(c => c.id === cardId);
+            return card ? card.name : 'Tarjeta';
+        }
+        
         function renderTemplateList() {
             const list = document.getElementById('templateList');
             if (!list) return; list.innerHTML = '';
