@@ -619,12 +619,12 @@
                 <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
                     <p class="text-[9px] uppercase font-bold text-blue-400">Próximo Vencimiento</p>
                     <p class="text-lg font-black text-blue-600">$${Math.round(monthDebt).toLocaleString()}</p>
-                    <p class="text-[8px] text-blue-400 mt-1 uppercase font-semibold">Se paga en ${monthNames[nextMIdx]}</p>
+                    <p class="text-[8px] text-blue-400 mt-1 uppercase font-semibold">Se paga en ${monthNames[nextMIdx-1]}</p>
                 </div>
                 <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
                     <p class="text-[9px] uppercase font-bold text-indigo-400">Vencimiento Posterior</p>
                     <p class="text-lg font-black text-indigo-600">$${Math.round(nextMonthDebt).toLocaleString()}</p>
-                    <p class="text-[8px] text-indigo-400 mt-1 uppercase font-semibold">Se paga en ${monthNames[afterMIdx]}</p>
+                    <p class="text-[8px] text-indigo-400 mt-1 uppercase font-semibold">Se paga en ${monthNames[nextMIdx]}</p>
                 </div>`;
         }
 
