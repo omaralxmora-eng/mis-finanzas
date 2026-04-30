@@ -967,11 +967,22 @@
                     stmt
                 });
 
-                // KPIs: amountPaid suma a pagado, resto pendiente
-                financials.pagado += stmt.amountPaid;
-                financials.pendiente += Math.max(0, stmt.totalDue - stmt.amountPaid);
-                financials.totalGastos += stmt.totalDue;
-                catTotals['Créditos'] = (catTotals['Créditos'] || 0) + stmt.totalDue;
+                if (stmt.isRecorded) {
+                    // Pago registrado (parcial, total o $0):
+                    // - amountPaid → cuenta como gasto/pagado de este mes
+                    // - el resto NO se cuenta aquí, se rolea al siguiente mes via carryOver
+                    //   y aparece allí como saldo anterior (evita doble conteo entre meses)
+                    financials.pagado += stmt.amountPaid;
+                    financials.totalGastos += stmt.amountPaid;
+                    if (stmt.amountPaid > 0) {
+                        catTotals['Créditos'] = (catTotals['Créditos'] || 0) + stmt.amountPaid;
+                    }
+                } else {
+                    // Sin registro: se asume pago completo este mes
+                    financials.pendiente += stmt.totalDue;
+                    financials.totalGastos += stmt.totalDue;
+                    catTotals['Créditos'] = (catTotals['Créditos'] || 0) + stmt.totalDue;
+                }
             });
 
             // ====== MOVIMIENTOS FIJOS DEL MES ======
