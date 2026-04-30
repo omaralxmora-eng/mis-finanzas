@@ -320,6 +320,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         const appIdGlobal = 'f-v1';
+        console.log('%c[BUILD] v-debug-2025-04-30-A','color:#3b82f6;font-weight:bold');
 
         let user = null;
         const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -405,17 +406,22 @@
         }
 
         // ============ AUTH ============
+        let appInitialized = false;
         onAuthStateChanged(auth, u => {
             user = u;
             if (u) {
-                initDateSelectors();
-                initApp();
+                if (!appInitialized) {
+                    initDateSelectors();
+                    initApp();
+                    appInitialized = true;
+
+                    onSnapshot(collection(db, 'artifacts', appIdGlobal, 'users', user.uid, 'notes'), snap => {
+                        state.notes = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                        renderNotesList();
+                    });
+                }
                 document.getElementById('authContainer').classList.add('hidden');
                 document.getElementById('appContent').classList.remove('hidden');
-                onSnapshot(collection(db, 'artifacts', appIdGlobal, 'users', user.uid, 'notes'), snap => {
-                    state.notes = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                    renderNotesList();
-                });
             } else {
                 document.getElementById('authContainer').classList.remove('hidden');
                 document.getElementById('appContent').classList.add('hidden');
@@ -457,8 +463,16 @@
 
         // ============ INIT APP ============
         function initApp() {
+            // Exponer state al window para debugging desde consola
+            window.__state = state;
+            console.log('[initApp] App inicializada — listeners conectados');
+
             onSnapshot(getCollRef('template'), snap => { state.template = snap.docs.map(d => ({id: d.id, ...d.data()})); renderTemplateList(); });
-            onSnapshot(getCollRef('monthly'), snap => { state.monthly = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
+            onSnapshot(getCollRef('monthly'), snap => {
+                state.monthly = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                console.log('[snap monthly]', state.monthly.length, 'docs / activos:', state.monthly.filter(m => m.active !== false).length);
+                refreshUI();
+            });
             onSnapshot(getCollRef('extras'), snap => { state.extras = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
             onSnapshot(getCollRef('cards'), snap => { state.cards = snap.docs.map(d => ({id: d.id, ...d.data()})); renderCardSelector(); refreshUI(); });
             onSnapshot(getCollRef('cardPurchases'), snap => { state.cardPurchases = snap.docs.map(d => ({id: d.id, ...d.data()})); renderCardDetail(); refreshUI(); });
@@ -522,14 +536,26 @@
                     category: document.getElementById('editCategory').value,
                     amount: parseFloat(document.getElementById('editAmount').value)
                 };
+                console.log('[editForm] Guardando', { coll, id, updates });
                 try {
-                    // setDoc + merge: actualiza si existe, recrea si fue eliminado.
-                    // Reincluimos los campos del estado local para mantener integridad
-                    // (month, year, status, active, timestamp, etc.) en caso de recreación.
                     const sourceMap = { monthly: state.monthly, extras: state.extras };
                     const localItem = (sourceMap[coll] || []).find(i => i.id === id) || {};
+                    console.log('[editForm] Item local antes del save:', JSON.parse(JSON.stringify(localItem)));
                     const { id: _ignore, ...rest } = localItem;
                     await setDoc(getDocRef(coll, id), { ...rest, ...updates }, { merge: true });
+                    console.log('[editForm] setDoc completo. Patcheando state local...');
+                    // Patch local
+                    if (sourceMap[coll]) {
+                        const item = sourceMap[coll].find(i => i.id === id);
+                        if (item) {
+                            Object.assign(item, updates);
+                            console.log('[editForm] Item local después del patch:', JSON.parse(JSON.stringify(item)));
+                        } else {
+                            console.warn('[editForm] ⚠ No se encontró el item para patchear en state.' + coll);
+                        }
+                    }
+                    refreshUI();
+                    console.log('[editForm] refreshUI ejecutado. Verificación final:', JSON.parse(JSON.stringify(sourceMap[coll].find(i => i.id === id))));
                     window.closeModal('editModal');
                 } catch (err) {
                     console.error('Error actualizando movimiento:', err);
@@ -1048,16 +1074,28 @@
             if (!user) return;
             try {
                 await setDoc(getDocRef(coll, id), { active: false }, { merge: true });
+                // Patchear estado local por si el snapshot no dispara a tiempo
+                if (state[coll]) {
+                    const item = state[coll].find(i => i.id === id);
+                    if (item) item.active = false;
+                }
+                refreshUI();
             } catch (err) {
-                console.error('Error ocultando documento:', err);
+                console.error('[hideDocById] Error:', err);
+                alert('No se pudo eliminar: ' + (err.message || err.code || 'error desconocido'));
             }
         };
         window.updateItemStatus = async (coll, id, status) => {
             if (!user) return;
             try {
                 await setDoc(getDocRef(coll, id), { status }, { merge: true });
+                if (state[coll]) {
+                    const item = state[coll].find(i => i.id === id);
+                    if (item) item.status = status;
+                }
+                refreshUI();
             } catch (err) {
-                console.error('Error actualizando estado:', err);
+                console.error('[updateItemStatus] Error:', err);
             }
         };
         window.addSingleFromTemplate = async (tid) => {
