@@ -305,7 +305,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, collection, onSnapshot, addDoc, deleteDoc, updateDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeFirestore, memoryLocalCache, doc, collection, onSnapshot, addDoc, deleteDoc, updateDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAk5syowwLlOJ3DzYGfgsfNt4HtN3QmRXw",
@@ -318,9 +318,9 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
+        // Cache en memoria para evitar problemas de sincronización con IndexedDB
+        const db = initializeFirestore(app, { localCache: memoryLocalCache() });
         const appIdGlobal = 'f-v1';
-        console.log('%c[BUILD] v-debug-2025-04-30-A','color:#3b82f6;font-weight:bold');
 
         let user = null;
         const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -463,20 +463,24 @@
 
         // ============ INIT APP ============
         function initApp() {
-            // Exponer state al window para debugging desde consola
             window.__state = state;
-            console.log('[initApp] App inicializada — listeners conectados');
 
-            onSnapshot(getCollRef('template'), snap => { state.template = snap.docs.map(d => ({id: d.id, ...d.data()})); renderTemplateList(); });
+            // Helper: deduplica por id, conservando la última versión (la más fresca del snapshot)
+            const dedupe = (arr) => {
+                const map = new Map();
+                arr.forEach(item => map.set(item.id, item));
+                return Array.from(map.values());
+            };
+
+            onSnapshot(getCollRef('template'), snap => { state.template = dedupe(snap.docs.map(d => ({id: d.id, ...d.data()}))); renderTemplateList(); });
             onSnapshot(getCollRef('monthly'), snap => {
-                state.monthly = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                console.log('[snap monthly]', state.monthly.length, 'docs / activos:', state.monthly.filter(m => m.active !== false).length);
+                state.monthly = dedupe(snap.docs.map(d => ({id: d.id, ...d.data()})));
                 refreshUI();
             });
-            onSnapshot(getCollRef('extras'), snap => { state.extras = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
-            onSnapshot(getCollRef('cards'), snap => { state.cards = snap.docs.map(d => ({id: d.id, ...d.data()})); renderCardSelector(); refreshUI(); });
-            onSnapshot(getCollRef('cardPurchases'), snap => { state.cardPurchases = snap.docs.map(d => ({id: d.id, ...d.data()})); renderCardDetail(); refreshUI(); });
-            onSnapshot(getCollRef('cardStatements'), snap => { state.cardStatements = snap.docs.map(d => ({id: d.id, ...d.data()})); refreshUI(); });
+            onSnapshot(getCollRef('extras'), snap => { state.extras = dedupe(snap.docs.map(d => ({id: d.id, ...d.data()}))); refreshUI(); });
+            onSnapshot(getCollRef('cards'), snap => { state.cards = dedupe(snap.docs.map(d => ({id: d.id, ...d.data()}))); renderCardSelector(); refreshUI(); });
+            onSnapshot(getCollRef('cardPurchases'), snap => { state.cardPurchases = dedupe(snap.docs.map(d => ({id: d.id, ...d.data()}))); renderCardDetail(); refreshUI(); });
+            onSnapshot(getCollRef('cardStatements'), snap => { state.cardStatements = dedupe(snap.docs.map(d => ({id: d.id, ...d.data()}))); refreshUI(); });
 
             document.getElementById('cardCreateForm').onsubmit = async (e) => {
                 e.preventDefault();
@@ -536,26 +540,12 @@
                     category: document.getElementById('editCategory').value,
                     amount: parseFloat(document.getElementById('editAmount').value)
                 };
-                console.log('[editForm] Guardando', { coll, id, updates });
                 try {
                     const sourceMap = { monthly: state.monthly, extras: state.extras };
-                    const localItem = (sourceMap[coll] || []).find(i => i.id === id) || {};
-                    console.log('[editForm] Item local antes del save:', JSON.parse(JSON.stringify(localItem)));
-                    const { id: _ignore, ...rest } = localItem;
-                    await setDoc(getDocRef(coll, id), { ...rest, ...updates }, { merge: true });
-                    console.log('[editForm] setDoc completo. Patcheando state local...');
-                    // Patch local
-                    if (sourceMap[coll]) {
-                        const item = sourceMap[coll].find(i => i.id === id);
-                        if (item) {
-                            Object.assign(item, updates);
-                            console.log('[editForm] Item local después del patch:', JSON.parse(JSON.stringify(item)));
-                        } else {
-                            console.warn('[editForm] ⚠ No se encontró el item para patchear en state.' + coll);
-                        }
-                    }
+                    const localItem = (sourceMap[coll] || []).find(i => i.id === id);
+                    await setDoc(getDocRef(coll, id), updates, { merge: true });
+                    if (localItem) Object.assign(localItem, updates);
                     refreshUI();
-                    console.log('[editForm] refreshUI ejecutado. Verificación final:', JSON.parse(JSON.stringify(sourceMap[coll].find(i => i.id === id))));
                     window.closeModal('editModal');
                 } catch (err) {
                     console.error('Error actualizando movimiento:', err);
