@@ -305,7 +305,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { initializeFirestore, memoryLocalCache, doc, collection, onSnapshot, addDoc, deleteDoc, updateDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeFirestore, memoryLocalCache, doc, collection, onSnapshot, addDoc, deleteDoc, updateDoc, setDoc, getDoc, getDocs, getDocsFromServer, getDocFromServer } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAk5syowwLlOJ3DzYGfgsfNt4HtN3QmRXw",
@@ -327,7 +327,7 @@
         let currentMonth = "";
         let currentYear = "";
 
-        let state = { template: [], monthly: [], extras: [], cards: [], cardPurchases: [], cardPayments: [], cardStatements: [], notes: [] };
+        let state = { template: [], monthly: [], extras: [], cards: [], cardPurchases: [], cardPayments: [], cardStatements: [], notes: [], ignoredIds: [] };
         let financials = { ingresos: 0, pagado: 0, pendiente: 0, totalGastos: 0 };
         let selectedCardId = null;
         let expenseChart = null;
@@ -462,25 +462,51 @@
         const getDocRef = (name, id) => doc(db, 'artifacts', appIdGlobal, 'users', user.uid, name, id);
 
         // ============ INIT APP ============
-        function initApp() {
+        async function initApp() {
             window.__state = state;
 
-            // Helper: deduplica por id, conservando la última versión (la más fresca del snapshot)
             const dedupe = (arr) => {
                 const map = new Map();
                 arr.forEach(item => map.set(item.id, item));
                 return Array.from(map.values());
             };
 
-            onSnapshot(getCollRef('template'), snap => { state.template = dedupe(snap.docs.map(d => ({id: d.id, ...d.data()}))); renderTemplateList(); });
-            onSnapshot(getCollRef('monthly'), snap => {
-                state.monthly = dedupe(snap.docs.map(d => ({id: d.id, ...d.data()})));
-                refreshUI();
-            });
-            onSnapshot(getCollRef('extras'), snap => { state.extras = dedupe(snap.docs.map(d => ({id: d.id, ...d.data()}))); refreshUI(); });
-            onSnapshot(getCollRef('cards'), snap => { state.cards = dedupe(snap.docs.map(d => ({id: d.id, ...d.data()}))); renderCardSelector(); refreshUI(); });
-            onSnapshot(getCollRef('cardPurchases'), snap => { state.cardPurchases = dedupe(snap.docs.map(d => ({id: d.id, ...d.data()}))); renderCardDetail(); refreshUI(); });
-            onSnapshot(getCollRef('cardStatements'), snap => { state.cardStatements = dedupe(snap.docs.map(d => ({id: d.id, ...d.data()}))); refreshUI(); });
+            const collections = ['template', 'monthly', 'extras', 'cards', 'cardPurchases', 'cardStatements', 'ignoredIds'];
+
+            // PASO 1: Lectura forzada desde servidor (bypasea cualquier cache corrupto)
+            for (const c of collections) {
+                try {
+                    const snap = await getDocsFromServer(getCollRef(c));
+                    state[c] = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                } catch (err) {
+                    console.error(`Error cargando ${c} desde servidor:`, err);
+                    state[c] = [];
+                }
+            }
+            renderTemplateList();
+            renderCardSelector();
+            renderCardDetail();
+            refreshUI();
+
+            // PASO 2: Conectar listeners para cambios en tiempo real.
+            // Usamos includeMetadataChanges + skip cuando snap.metadata.fromCache es true
+            // para no sobreescribir el state con datos cacheados corruptos.
+            const makeListener = (collName, extraRender) => {
+                return onSnapshot(getCollRef(collName), { includeMetadataChanges: true }, snap => {
+                    if (snap.metadata.fromCache) return; // Ignorar snapshots del cache
+                    state[collName] = dedupe(snap.docs.map(d => ({id: d.id, ...d.data()})));
+                    if (extraRender) extraRender();
+                    refreshUI();
+                });
+            };
+
+            makeListener('template', renderTemplateList);
+            makeListener('monthly');
+            makeListener('extras');
+            makeListener('cards', renderCardSelector);
+            makeListener('cardPurchases', renderCardDetail);
+            makeListener('cardStatements');
+            makeListener('ignoredIds');
 
             document.getElementById('cardCreateForm').onsubmit = async (e) => {
                 e.preventDefault();
@@ -522,13 +548,26 @@
 
             document.getElementById('transactionForm').onsubmit = async (e) => {
                 e.preventDefault();
-                await addDoc(getCollRef('extras'), {
-                    type: e.target.tType.value, name: e.target.tName.value,
-                    amount: parseFloat(e.target.tAmount.value), category: e.target.tCategory.value,
-                    month: currentMonth, year: currentYear, active: true, timestamp: Date.now()
-                });
-                window.closeModal('transactionModal');
-                e.target.reset();
+                const newItem = {
+                    type: e.target.tType.value,
+                    name: e.target.tName.value,
+                    amount: parseFloat(e.target.tAmount.value),
+                    category: e.target.tCategory.value,
+                    month: currentMonth,
+                    year: currentYear,
+                    active: true,
+                    timestamp: Date.now()
+                };
+                try {
+                    const ref = await addDoc(getCollRef('extras'), newItem);
+                    state.extras.push({ id: ref.id, ...newItem });
+                    refreshUI();
+                    window.closeModal('transactionModal');
+                    e.target.reset();
+                } catch (err) {
+                    console.error('Error agregando movimiento:', err);
+                    alert('No se pudo agregar: ' + (err.message || 'error desconocido'));
+                }
             };
 
             document.getElementById('editForm').onsubmit = async (e) => {
@@ -541,9 +580,19 @@
                     amount: parseFloat(document.getElementById('editAmount').value)
                 };
                 try {
-                    const sourceMap = { monthly: state.monthly, extras: state.extras };
-                    const localItem = (sourceMap[coll] || []).find(i => i.id === id);
-                    await setDoc(getDocRef(coll, id), updates, { merge: true });
+                    // Verificar que el doc existe en servidor para no crear fantasmas
+                    const ref = getDocRef(coll, id);
+                    const snap = await getDoc(ref);
+                    if (!snap.exists()) {
+                        // Limpiar fantasma del state local
+                        if (state[coll]) state[coll] = state[coll].filter(i => i.id !== id);
+                        refreshUI();
+                        window.closeModal('editModal');
+                        alert('Este registro ya no existe en el servidor. Se limpió del listado.');
+                        return;
+                    }
+                    await setDoc(ref, updates, { merge: true });
+                    const localItem = (state[coll] || []).find(i => i.id === id);
                     if (localItem) Object.assign(localItem, updates);
                     refreshUI();
                     window.closeModal('editModal');
@@ -975,8 +1024,11 @@
                 }
             });
 
+            // Set de IDs ignorados (fantasmas marcados por el usuario)
+            const ignored = new Set((state.ignoredIds || []).map(i => i.id));
+
             // ====== MOVIMIENTOS FIJOS DEL MES ======
-            state.monthly.filter(m => m.active !== false && m.month === currentMonth && m.year === currentYear).forEach(m => {
+            state.monthly.filter(m => m.active !== false && m.month === currentMonth && m.year === currentYear && !ignored.has(m.id)).forEach(m => {
                 allItems.push({ ...m, type: 'fixed', isIncome: false });
                 if (m.status === 'paid') financials.pagado += m.amount; else financials.pendiente += m.amount;
                 financials.totalGastos += m.amount;
@@ -984,7 +1036,7 @@
             });
 
             // ====== EXTRAS (ingresos / gastos variables) ======
-            state.extras.filter(e => e.active !== false && e.month === currentMonth && e.year === currentYear).forEach(e => {
+            state.extras.filter(e => e.active !== false && e.month === currentMonth && e.year === currentYear && !ignored.has(e.id)).forEach(e => {
                 const isIncome = e.type === 'income';
                 allItems.push({ ...e, isIncome, type: 'extra', status: isIncome ? 'income' : 'paid' });
                 if (isIncome) financials.ingresos += e.amount;
@@ -1019,15 +1071,19 @@
                 else statusBadge = '<span class="status-badge bg-orange-100 text-orange-700">Pendiente</span>';
 
                 let actionHtml = '';
+                const safeName = (m.name || '').replace(/'/g, "\\'").replace(/"/g, '');
                 if (isStatement) {
                     actionHtml = `<button onclick="window.openStatementModal('${m.id}')" class="btn-action text-orange-600 font-black text-[10px] uppercase tracking-wider px-2 py-1 border border-orange-200 rounded hover:bg-orange-50">Ver / Pagar</button>`;
                 } else if (m.type === 'extra') {
-                    actionHtml = `<button onclick="window.hideDocById('extras', '${m.id}')" class="btn-action text-red-300">🗑️</button>`;
+                    actionHtml = `
+                        <button onclick="window.hideDocById('extras', '${m.id}')" class="btn-action text-red-300" title="Borrar">🗑️</button>
+                        <button onclick="window.ignoreFantasma('${m.id}', '${safeName}')" class="btn-action text-slate-300 hover:text-purple-500" title="Marcar como fantasma">👻</button>`;
                 } else { // fixed
                     const isPaid = status === 'paid';
                     actionHtml = `
-                        <button onclick="window.updateItemStatus('monthly', '${m.id}', '${isPaid ? 'pending' : 'paid'}')" class="btn-action text-blue-500 font-bold">${isPaid ? '↩' : '✓'}</button>
-                        <button onclick="window.hideDocById('monthly', '${m.id}')" class="btn-action text-red-300">🗑️</button>`;
+                        <button onclick="window.updateItemStatus('monthly', '${m.id}', '${isPaid ? 'pending' : 'paid'}')" class="btn-action text-blue-500 font-bold" title="Toggle estado">${isPaid ? '↩' : '✓'}</button>
+                        <button onclick="window.hideDocById('monthly', '${m.id}')" class="btn-action text-red-300" title="Borrar">🗑️</button>
+                        <button onclick="window.ignoreFantasma('${m.id}', '${safeName}')" class="btn-action text-slate-300 hover:text-purple-500" title="Marcar como fantasma">👻</button>`;
                 }
 
                 const canEdit = m.type === 'fixed' || m.type === 'extra';
@@ -1071,25 +1127,67 @@
             if (selectedCardId) renderCardDetail();
         }
 
+        window.ignoreFantasma = async (id, name) => {
+            if (!user) return;
+            if (!confirm(`¿Ocultar definitivamente "${name}"?\n\nSe agregará a la lista de IDs ignorados. Esto es para registros fantasma que no se dejan borrar normalmente.`)) return;
+            try {
+                await setDoc(getDocRef('ignoredIds', id), {
+                    name: name || 'sin nombre',
+                    timestamp: Date.now()
+                });
+                // Patch local: agregar a ignoredIds y refrescar
+                if (!state.ignoredIds.find(i => i.id === id)) {
+                    state.ignoredIds.push({ id, name, timestamp: Date.now() });
+                }
+                refreshUI();
+            } catch (err) {
+                console.error('Error ignorando:', err);
+                alert('No se pudo ignorar: ' + (err.message || 'error'));
+            }
+        };
+
+        window.unignoreFantasma = async (id) => {
+            if (!user) return;
+            try {
+                await deleteDoc(getDocRef('ignoredIds', id));
+                state.ignoredIds = state.ignoredIds.filter(i => i.id !== id);
+                refreshUI();
+            } catch (err) {
+                console.error('Error des-ignorando:', err);
+            }
+        };
+
         window.hideDocById = async (coll, id) => {
             if (!user) return;
             try {
-                await setDoc(getDocRef(coll, id), { active: false }, { merge: true });
-                // Patchear estado local por si el snapshot no dispara a tiempo
+                // deleteDoc en lugar de soft-delete: elimina realmente del servidor
+                // y evicta del cache de Firestore (evita fantasmas residuales).
+                await deleteDoc(getDocRef(coll, id));
+                // Limpiar del state local
                 if (state[coll]) {
-                    const item = state[coll].find(i => i.id === id);
-                    if (item) item.active = false;
+                    state[coll] = state[coll].filter(i => i.id !== id);
                 }
                 refreshUI();
             } catch (err) {
                 console.error('[hideDocById] Error:', err);
-                alert('No se pudo eliminar: ' + (err.message || err.code || 'error desconocido'));
+                // Si el doc no existía, igual lo sacamos del state local
+                if (state[coll]) {
+                    state[coll] = state[coll].filter(i => i.id !== id);
+                    refreshUI();
+                }
             }
         };
         window.updateItemStatus = async (coll, id, status) => {
             if (!user) return;
             try {
-                await setDoc(getDocRef(coll, id), { status }, { merge: true });
+                const ref = getDocRef(coll, id);
+                const snap = await getDoc(ref);
+                if (!snap.exists()) {
+                    if (state[coll]) state[coll] = state[coll].filter(i => i.id !== id);
+                    refreshUI();
+                    return;
+                }
+                await setDoc(ref, { status }, { merge: true });
                 if (state[coll]) {
                     const item = state[coll].find(i => i.id === id);
                     if (item) item.status = status;
@@ -1100,11 +1198,29 @@
             }
         };
         window.addSingleFromTemplate = async (tid) => {
+            if (!user) return;
             const t = state.template.find(i => i.id === tid);
-            if (user && t) await addDoc(getCollRef('monthly'), {
-                name: t.name, amount: t.amount, category: t.category,
-                month: currentMonth, year: currentYear, status: 'pending', active: true, timestamp: Date.now()
-            });
+            if (!t) return;
+            // Defensive copy: snapshot de los valores AHORA, antes de cualquier await
+            const newItem = {
+                name: t.name,
+                amount: t.amount,
+                category: t.category,
+                month: currentMonth,
+                year: currentYear,
+                status: 'pending',
+                active: true,
+                timestamp: Date.now()
+            };
+            try {
+                const ref = await addDoc(getCollRef('monthly'), newItem);
+                // Patch local inmediato — no depender del listener para que aparezca en UI
+                state.monthly.push({ id: ref.id, ...newItem });
+                refreshUI();
+            } catch (err) {
+                console.error('Error agregando desde plantilla:', err);
+                alert('No se pudo agregar: ' + (err.message || 'error desconocido'));
+            }
         };
 
         function getCardName(cardId) {
